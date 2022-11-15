@@ -17,6 +17,21 @@ class GraphicsGenerator:
         self.trans_mat = np.eye(4)
         self.scale_mat = np.eye(4)
         self.rot_mat = np.eye(4)
+    def light(self):
+        glEnable(GL_COLOR_MATERIAL)
+        glEnable(GL_LIGHTING)
+        glEnable(GL_DEPTH_TEST)
+
+        # feel free to adjust light colors
+        lightAmbient = [0.5, 0.5, 0.5, 1.0]
+        lightDiffuse = [0.5, 0.5, 0.5, 1.0]
+        lightSpecular = [0.5, 0.5, 0.5, 1.0]
+        lightPosition = [1, 1, -1, 0]    # vector: point at infinity
+        glLightfv(GL_LIGHT0, GL_AMBIENT, lightAmbient)
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, lightDiffuse)
+        glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
+        glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
+        glEnable(GL_LIGHT0)
 
     def GenerateTiles(self):
         # y value is fixed. and then x/z vaule varies.
@@ -113,12 +128,13 @@ class GraphicsGenerator:
         glLoadIdentity()
         gluLookAt(0,0,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat@self.scale_mat@self.rot_mat).T)
-        # tile
+
+        # tile Generation
         self.GenerateTiles()
-        # wall
+        # Wall Generation (for test)
         self.GenerateWalls(True)
         self.GenerateWalls(False)
-        pass
+
     def keyboard(self, key, x, y):
         self.characterController.InputKeyboard(key)
         glutPostRedisplay()
