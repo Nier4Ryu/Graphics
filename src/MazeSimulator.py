@@ -14,10 +14,10 @@ class Simulator:
         mazeGenerator = MazeGenerator(width, height, entrancePoint, exitPoint)
         self.maze = mazeGenerator.GenerateMaze()
 
-        self.graphicsGenerator = GraphicsGenerator()
+        self.graphicsGenerator = GraphicsGenerator(self.maze)
 
     def RunSimulator(self):
-        self.graphicsGenerator.Update(self.maze)
+        self.graphicsGenerator.Update()
 
 if __name__ == "__main__":
     simulator = Simulator()
