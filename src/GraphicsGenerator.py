@@ -134,6 +134,7 @@ class GraphicsGenerator:
         # Wall Generation (for test)
         self.GenerateWalls(True)
         self.GenerateWalls(False)
+        glLoadIdentity()
 
     def keyboard(self, key, x, y):
         self.characterController.InputKeyboard(key)
