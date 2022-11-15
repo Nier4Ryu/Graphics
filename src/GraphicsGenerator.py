@@ -145,7 +145,15 @@ class GraphicsGenerator:
 
         glutSwapBuffers()
 
-
+    def reshape(self, w, h):
+        # implement here
+        print(f"window size: {w} x {h}")
+        self.center_x = int(w/2)
+        self.center_y = int(h/2)
+        self.w = w
+        self.h = h
+        glViewport(0,0,self.w, self.h)
+        glutPostRedisplay()
     def keyboard(self, key, x, y):
         # self.characterController.InputKeyboard(key)
         glutPostRedisplay()
@@ -164,7 +172,7 @@ class GraphicsGenerator:
         glutSpecialFunc(self.special)#Left Right Arrow
         # glutMouseFunc(self.mouse)
         # glutMotionFunc(self.motion)
-        # glutReshapeFunc(self.reshape)
+        glutReshapeFunc(self.reshape)
 
         self.light()
 
