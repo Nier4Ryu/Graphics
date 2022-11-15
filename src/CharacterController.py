@@ -23,7 +23,43 @@ class CharacterController:
         self.goalPoint = np.zeros(2)
         self.initPoint = np.zeros(2)
         self.savePoint = np.zeros(2)
-    def Input(self):
+    def InputKeyboard(self, key, x, y):
+        """
+        wasd movement
+        """
+        #Conversion from Mouse coordinates to World coordinates
+        x_world, y_world = self.GetMouseCoordinates(x, y)
+        print(f"keyboard event: key={key}, x={x_world}, y={y_world}")
+
+        #Required
+        if key == b'd' or key == b'D':
+            print("D pressed -> Default Transform")
+            self.camera.InitTransform()
+        if key == b'0':
+            print("0 pressed -> Reset Projection")
+            self.camera.InitProjection()
+        if key == b'\x1b':
+            print("ESC pressed -> Exit Program")
+            glutLeaveMainLoop()
+        glutPostRedisplay()
+
+        pass
+
+    def InputSpecial(self, key, x, y):
+        """
+        Camera Rotation Via Left Right Arrow
+        """
+        x_world, y_world = self.GetMouseCoordinates(x, y)
+        print(f"special Key event: key={key}, x={x_world}, y={y_world}")
+        #Fov Change goes Here -> Arrow Keys   
+        if key == 101:#UpArrow
+            #Increase Fov by 5
+            self.camera.FovChange(5)#->Don't use UpdateProjection here due to Projection init with in
+        if key == 103:#DownArrow
+            #Decrease Fov by 5
+            self.camera.FovChange(-5)        
+        glutPostRedisplay()
+
         pass
 
     def UpdateState(self):
@@ -32,9 +68,6 @@ class CharacterController:
         1. Position
         2. Life
         """
-        pass
-
-    def GenerateController(self):
         pass
 
 if __name__ == "__main__":

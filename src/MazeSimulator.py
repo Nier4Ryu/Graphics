@@ -3,7 +3,6 @@
 
 # import our models
 import MazeGenerator # -> Create Maze, after that useless
-import CharacterController
 import GraphicsGenerator
 
 class Simulator:
@@ -15,15 +14,10 @@ class Simulator:
         mazeGenerator = MazeGenerator(width, height, entrancePoint, exitPoint)
         self.maze = mazeGenerator.GenerateMaze()
 
-        characterController = CharacterController()
-        self.controller = characterController.GenerateContorller()
-        
         self.graphicsGenerator = GraphicsGenerator()
 
     def RunSimulator(self):
-        while True:
-            input = self.contoller.GetInputs()
-            self.graphicsGenerator.Update(self.maze, input)
+        self.graphicsGenerator.Update(self.maze)
 
 if __name__ == "__main__":
     simulator = Simulator()
