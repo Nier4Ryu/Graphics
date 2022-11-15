@@ -14,6 +14,9 @@ class GraphicsGenerator:
         self.tile_size = 2.0
         self.height = -1.25
 
+        self.w = 800
+        self.h = 800
+
         self.trans_mat = np.eye(4)
         self.scale_mat = np.eye(4)
         self.rot_mat = np.eye(4)
