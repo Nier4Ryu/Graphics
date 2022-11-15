@@ -2,8 +2,8 @@
 # Basic Modules
 
 # import our models
-import MazeGenerator # -> Create Maze, after that useless
-import GraphicsGenerator
+from MazeGenerator import MazeGenerator # -> Create Maze, after that useless
+from GraphicsGenerator import GraphicsGenerator
 
 class Simulator:
     def __init__(self):

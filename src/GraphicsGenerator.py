@@ -20,6 +20,8 @@ class GraphicsGenerator:
         self.trans_mat = np.eye(4)
         self.scale_mat = np.eye(4)
         self.rot_mat = np.eye(4)
+        self.nearz = -4.0
+        self.farz = 4.0
     def light(self):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
@@ -131,6 +133,7 @@ class GraphicsGenerator:
         glLoadIdentity()
         gluLookAt(0,0,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat@self.scale_mat@self.rot_mat).T)
+        glutSolidTeapot(0.25)
 
         # tile Generation
         self.GenerateTiles()
@@ -139,11 +142,15 @@ class GraphicsGenerator:
         self.GenerateWalls(False)
         glLoadIdentity()
 
+
+        glutSwapBuffers()
+
+
     def keyboard(self, key, x, y):
-        self.characterController.InputKeyboard(key)
+        # self.characterController.InputKeyboard(key)
         glutPostRedisplay()
     def special(self, key, x, y):
-        self.characterController.InputSpecial(key)
+        # self.characterController.InputSpecial(key)
         glutPostRedisplay()
     def Update(self):
         glutInit()
@@ -164,4 +171,5 @@ class GraphicsGenerator:
         glutMainLoop()
     
 if __name__ == "__main__":
-    pass
+    Generator = GraphicsGenerator(np.zeros((4,4)))
+    Generator.Update()
