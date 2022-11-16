@@ -14,6 +14,8 @@ class GraphicsGenerator:
         self.tile_size = 2.0
         self.height = -1.25
 
+        self.move_speed = 0.05
+
         self.w = 800
         self.h = 800
 
@@ -156,6 +158,18 @@ class GraphicsGenerator:
         glutPostRedisplay()
     def keyboard(self, key, x, y):
         # self.characterController.InputKeyboard(key)
+        if key == b'w' or key == b'W':
+            self.trans_mat[2,3] = self.trans_mat[2,3] + self.move_speed
+        if key == b's' or key == b'S':
+            self.trans_mat[2,3] = self.trans_mat[2,3] - self.move_speed
+        if key == b'a' or key == b'A':
+            self.trans_mat[0,3] = self.trans_mat[0,3] + self.move_speed
+        if key == b'd' or key == b'D':
+            self.trans_mat[0,3] = self.trans_mat[0,3] - self.move_speed
+        
+        if key == b'\x1b':
+            print('Good bye')
+            glutLeaveMainLoop()
         glutPostRedisplay()
     def special(self, key, x, y):
         # self.characterController.InputSpecial(key)
