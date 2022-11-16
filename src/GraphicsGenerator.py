@@ -228,7 +228,7 @@ class GraphicsGenerator:
     def Update(self):
         glutInit()
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-        glutInitWindowSize(800, 800) #-> Sys get full height width
+        glutInitWindowSize(1600, 900) #-> Sys get full height width
         glutInitWindowPosition(0, 0)
         glutCreateWindow(b"Maze Simulator")
 
