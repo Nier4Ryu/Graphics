@@ -15,15 +15,14 @@ class GraphicsGenerator:
         self.height = -1.25
 
         self.move_speed = 0.05
+        self.degree_speed = 0.5
 
         self.w = 800
         self.h = 800
 
-        self.trans_mat = np.eye(4)
-        self.scale_mat = np.eye(4)
-        self.rot_mat = np.eye(4)
-        self.nearz = -4.0
-        self.farz = 4.0
+        self.reset_pos()
+        
+
     def light(self):
         glEnable(GL_COLOR_MATERIAL)
         glEnable(GL_LIGHTING)
@@ -134,7 +133,7 @@ class GraphicsGenerator:
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
         gluLookAt(0,0,self.camz, 0,0,0, 0,1,0)
-        glMultMatrixf((self.trans_mat@self.scale_mat@self.rot_mat).T)
+        glMultMatrixf((self.trans_mat).T)
         glutSolidTeapot(0.25)
 
         # tile Generation
@@ -143,7 +142,6 @@ class GraphicsGenerator:
         self.GenerateWalls(True)
         self.GenerateWalls(False)
         glLoadIdentity()
-
 
         glutSwapBuffers()
 
@@ -157,7 +155,6 @@ class GraphicsGenerator:
         glViewport(0,0,self.w, self.h)
         glutPostRedisplay()
     def keyboard(self, key, x, y):
-        # self.characterController.InputKeyboard(key)
         if key == b'w' or key == b'W':
             self.trans_mat[2,3] = self.trans_mat[2,3] + self.move_speed
         if key == b's' or key == b'S':
@@ -167,13 +164,63 @@ class GraphicsGenerator:
         if key == b'd' or key == b'D':
             self.trans_mat[0,3] = self.trans_mat[0,3] - self.move_speed
         
+        if key == b'u' or key == b'U':
+            self.reset_pos(0)
+        if key == b'i' or key == b'I':
+            self.reset_pos(1)
+        if key == b'o' or key == b'O':
+            self.reset_pos(2)
+        if key == b'p' or key == b'P':
+            self.reset_pos(3)
+        
         if key == b'\x1b':
             print('Good bye')
             glutLeaveMainLoop()
+
         glutPostRedisplay()
     def special(self, key, x, y):
+        # 100 is left and 102 is right
+        if key == 100:
+            temp_rot = self.rotation(self.degree_speed)
+
+            self.trans_mat = temp_rot @ self.trans_mat
+        if key == 102:
+            temp_rot = self.rotation(-self.degree_speed)
+            self.trans_mat = temp_rot @ self.trans_mat
         # self.characterController.InputSpecial(key)
         glutPostRedisplay()
+    
+    def rotation(self, degree = 10):
+        temp_rot = np.eye(4)
+        rad = degree * np.pi / 180
+        temp_rot[0,0] = np.cos(rad)
+        temp_rot[0,2] = -np.sin(rad)
+        temp_rot[2,0] = np.sin(rad)
+        temp_rot[2,2] = np.cos(rad)
+        return temp_rot
+    def reset_pos(self, pos:int = 0):
+        # pos is the wall side where the character will be placed.
+        temp_trans = np.eye(4)
+        if pos == 0:
+            temp_trans[2,3] = -2
+            degree = 0
+            pass
+        elif pos == 1:
+            temp_trans[0,3] = -2
+            degree = 90
+            pass
+        elif pos == 2:
+            temp_trans[2,3] = 2
+            degree = 180
+            pass
+        elif pos==3:
+            temp_trans[0,3] = 2
+            degree = 270
+            pass
+        else:
+            print('wrong pos: only 4 walls: value must be 0 to 3')
+        temp_trans = self.rotation(degree) @ temp_trans
+        self.trans_mat = temp_trans
     def Update(self):
         glutInit()
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
