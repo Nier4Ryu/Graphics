@@ -14,8 +14,8 @@ class GraphicsGenerator:
         self.tile_size = 2.0
         self.height = -1.25
 
-        self.move_speed = 0.05
-        self.degree_speed = 0.5
+        self.move_speed = 0.2
+        self.degree_speed = 5
 
         self.w = 800
         self.h = 800
@@ -111,7 +111,7 @@ class GraphicsGenerator:
     
     def perspective(self, fov):
         self.camz = self.h/800/np.tan((np.pi/180)*fov/2)
-        self.nearz = self.camz / 8 # self.camz - 7/8
+        self.nearz = self.camz /2 # self.camz - 7/8
         self.farz = self.camz * 4.5
 
     def GenerateGraphics(self):
@@ -202,19 +202,19 @@ class GraphicsGenerator:
         # pos is the wall side where the character will be placed.
         temp_trans = np.eye(4)
         if pos == 0:
-            temp_trans[2,3] = -2
+            temp_trans[2,3] = -3.2
             degree = 0
             pass
         elif pos == 1:
-            temp_trans[0,3] = -2
+            temp_trans[0,3] = -3.2
             degree = 90
             pass
         elif pos == 2:
-            temp_trans[2,3] = 2
+            temp_trans[2,3] = 3.2
             degree = 180
             pass
         elif pos==3:
-            temp_trans[0,3] = 2
+            temp_trans[0,3] = 3.2
             degree = 270
             pass
         else:
