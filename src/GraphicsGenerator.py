@@ -22,8 +22,18 @@ class GraphicsGenerator:
 
         self.reset_pos(8)
 
-        self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(4,1),(0,2),(0,3),(1,3),(2,2),(2,3)]
-        # self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(8,0),(9,0),(10,0)]
+        # self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(4,1),(0,2),(0,3),(1,3),(2,2),(2,3)]
+        self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(8,0),(9,0),(10,0),
+                                (1,4),(2,4),(3,4),(4,4),(5,4),(6,4),(7,4),(8,4),(9,4),(10,4),
+                                (1,6),(2,6),(3,6),(4,6),(5,6),(6,6),(7,6),(8,6),(9,6),(10,6),
+                                (1,10),(2,10),(3,10),(4,10),(5,10),(6,10),(7,10),(8,10),(9,10),(10,10),
+                                (1,15),(2,15),(3,15),(4,15),(5,15),(6,15),(7,14),(8,15),(9,15),(10,15),
+                                (1,20),(2,20),(3,20),(4,20),(5,20),(6,21),(7,21),(8,20),(9,20),(10,20),
+                                (1,25),(2,25),(3,25),(4,25),(5,25),(6,26),(7,26),(8,25),(9,25),(10,25),
+                                (1,30),(2,30),(3,30),(4,30),(5,30),(6,31),(7,31),(8,30),(9,30),(10,30),
+                                (1,35),(2,35),(3,35),(4,34),(5,35),(6,35),(7,35),(8,35),(9,35),(10,35),
+                                (1,50),(2,50),(3,50),(4,50),(5,50),(6,51),(7,51),(8,50),(9,50),(10,50),
+                                (1,60),(2,60),(3,60),(4,60),(5,60),(6,61),(7,61),(8,60),(9,60),(10,60)]
         self.color_list = ['red','orange','yellow','green','blue','indigo','violet']
         
 
@@ -42,6 +52,16 @@ class GraphicsGenerator:
         glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
         glEnable(GL_LIGHT0)
 
+    def GererateCheckerTexture(self):
+        h,w = self.maze.shape
+        textbase = np.zeros((4*h, 4*w))
+        # h is z direction and w is x direction.
+
+
+        # glTexCoord2f
+
+        pass
+
     def GenerateTiles(self):
         # y value is fixed. and then x/z vaule varies.
         # H is z and W is x
@@ -52,7 +72,9 @@ class GraphicsGenerator:
                     color = 'black'
                 else:
                     color = 'white'
-                self.GenerateSingleBlock(self.tile_size*(wp-1.5), -self.height, self.tile_size*(hp-1.5), self.tile_size, color, 'tile')
+                # self.GenerateSingleBlock(self.tile_size*(wp-1.5), -self.height, self.tile_size*(hp-1.5), self.tile_size, color, 'tile')
+                # print('gg')
+                # self.DrawSingleTile(wp,self.height,hp)
 
     def GenerateWalls_old(self, test: int=0):
         size = self.tile_size/4
@@ -85,7 +107,24 @@ class GraphicsGenerator:
             l = len(self.color_list)
             color = self.color_list[i%l]
             self.GenerateSingleBlock(x*4*self.tile_size, self.tile_size*1.0125, z*4*self.tile_size, 4*self.tile_size, color, 'block')
-
+            # print('hhhh')
+    def DrawSingleTile(self, x=0,y=-0.155,z=0, size_x=0.1, size_z = 0.1):
+        glBegin(GL_QUADS)
+        glColor3f(0.7, 0.7, 0.7)
+        # glTexCoord2d(0.0, 0.0)
+        glVertex3f(-size_x+x,y,size_z+z)
+        # glTexCoord2d(1.0, 0.0)
+        glVertex3f(size_x+x,y,size_z+z)
+        # glTexCoord2d(1.0, 1.0)
+        glVertex3f(size_x+x,y,-size_z+z)
+        # glTexCoord2d(0.0, 1.0)
+        glVertex3f(-size_x+x,y,-size_z+z)
+        glEnd()
+    def DrawFloor(self):
+        centercoord_z = 0.5*self.maze.shape[0]*self.tile_size
+        centercoord_x = 0.5*self.maze.shape[1]*self.tile_size
+        self.DrawSingleTile(centercoord_x, -self.height, centercoord_z, size_x=2*centercoord_x, size_z = 2*centercoord_z)
+        pass
     def GenerateSingleBlock(self, x,y,z, size=0.25, color='black', mode='block'):
         # **!! This function must be just under the cam setting and transformation matrix !!**
         # **!! Not followed by glLoadIdentity() !!**
@@ -175,21 +214,25 @@ class GraphicsGenerator:
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
+        
         self.perspective(45)
         glFrustum(-self.w/800/8,self.w/800/8,-self.h/800/8,self.h/800/8, self.nearz, self.farz)
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        gluLookAt(0,0.3,self.camz, 0,0,0, 0,1,0)
+        gluLookAt(0,0.25,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat).T)
         # glutSolidTeapot(0.125)
 
         # tile Generation
         self.GenerateTiles()
+        self.DrawSingleTile()
 
         # Wall Generation test
         self.GenerateWalls()
+
+        self.DrawFloor()
 
         glLoadIdentity()
 
@@ -300,5 +343,5 @@ class GraphicsGenerator:
 if __name__ == "__main__":
     TestMaze = np.array([[2,0,0,0,0],[1,1,1,1,0],[0,1,0,1,1],[0,0,0,1,3]])
     print(TestMaze)
-    Generator = GraphicsGenerator(TestMaze)
+    Generator = GraphicsGenerator(np.zeros((51,51)))
     Generator.Update()
