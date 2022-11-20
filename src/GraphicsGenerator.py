@@ -16,15 +16,18 @@ class GraphicsGenerator:
         self.characterController = CharacterController(self.maze, self.tile_size)
         self.height = 0.2
 
-        self.rotation_angle = 180
+        self.initial_angle = 225
+        # self.rotation_angle = 180
 
         self.move_speed = 0.05
-        self.degree_speed = 45
+        self.degree_speed = 15
 
         self.w = 1600
         self.h = 900
-
+        print(self.initial_angle)
         self.reset_pos(8)
+        print(self.initial_angle)
+        print("outside",self.rotation_angle)
 
         self.color_list = ['red','orange','yellow','green','blue','indigo','violet']
         
@@ -202,10 +205,11 @@ class GraphicsGenerator:
 
         """
         rotation = np.eye(4)
-        rotation[0,0] = np.cos(np.radians(-self.rotation_angle))
-        rotation[0,2] = -np.sin(np.radians(-self.rotation_angle))
-        rotation[2,0] = np.sin(np.radians(-self.rotation_angle))
-        rotation[2,2] = np.cos(np.radians(-self.rotation_angle))
+        print(self.rotation_angle)
+        rotation[0,0] = np.cos(np.radians(-(self.rotation_angle-180)))
+        rotation[0,2] = -np.sin(np.radians(-(self.rotation_angle-180)))
+        rotation[2,0] = np.sin(np.radians(-(self.rotation_angle-180)))
+        rotation[2,2] = np.cos(np.radians(-(self.rotation_angle-180)))
         direction = np.array([x,0,z,1])
         if self.characterController.Translation(rotation, direction):
             self.trans_mat[0,3] = self.trans_mat[0,3] + x
@@ -288,7 +292,9 @@ class GraphicsGenerator:
             temp_trans[0,3] = 0.75
             degree = 270
         else:
-            degree = self.rotation_angle
+            degree = self.initial_angle
+            print(self.initial_angle)
+            self.rotation_angle = 0
         
         self.trans_mat = self.rotation(degree)@temp_trans
     def Update(self):
