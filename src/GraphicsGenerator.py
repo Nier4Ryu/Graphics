@@ -24,18 +24,6 @@ class GraphicsGenerator:
 
         self.reset_pos(8)
 
-        # self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(4,1),(0,2),(0,3),(1,3),(2,2),(2,3)]
-        self.test_wall_list = [(1,0),(2,0),(3,0),(4,0),(5,0),(6,0),(7,0),(8,0),(9,0),(10,0),(1,1), (2,2),
-                                (1,4),(2,4),(3,4),(4,4),(5,4),(6,4),(7,4),(8,4),(9,4),(10,4),
-                                (1,6),(2,6),(3,6),(4,6),(5,6),(6,6),(7,6),(8,6),(9,6),(10,6),
-                                (1,10),(2,10),(3,10),(4,10),(5,10),(6,10),(7,10),(8,10),(9,10),(10,10),
-                                (1,15),(2,15),(3,15),(4,15),(5,15),(6,15),(7,14),(8,15),(9,15),(10,15),
-                                (1,20),(2,20),(3,20),(4,20),(5,20),(6,21),(7,21),(8,20),(9,20),(10,20),
-                                (1,25),(2,25),(3,25),(4,25),(5,25),(6,26),(7,26),(8,25),(9,25),(10,25),
-                                (1,30),(2,30),(3,30),(4,30),(5,30),(6,31),(7,31),(8,30),(9,30),(10,30),
-                                (1,35),(2,35),(3,35),(4,34),(5,35),(6,35),(7,35),(8,35),(9,35),(10,35),
-                                (1,50),(2,50),(3,50),(4,50),(5,50),(6,51),(7,51),(8,50),(9,50),(10,50),
-                                (1,60),(2,60),(3,60),(4,60),(5,60),(6,61),(7,61),(8,60),(9,60),(10,60)]
         self.color_list = ['red','orange','yellow','green','blue','indigo','violet']
         
 
@@ -53,80 +41,15 @@ class GraphicsGenerator:
         glLightfv(GL_LIGHT0, GL_SPECULAR, lightSpecular)
         glLightfv(GL_LIGHT0, GL_POSITION, lightPosition)
         glEnable(GL_LIGHT0)
-
-    def GererateCheckerTexture(self):
-        h,w = self.map.shape
-        textbase = np.zeros((4*h, 4*w))
-        # h is z direction and w is x direction.
-
-
-        # glTexCoord2f
-
-        pass
-
-    def GenerateTiles_old(self):
-        # y value is fixed. and then x/z vaule varies.
-        # H is z and W is x
-        h,w = self.map.shape
-        for hp in range(4*h):
-            for wp in range(4*w):
-                if hp%2 != wp%2:
-                    color = 'black'
-                else:
-                    color = 'white'
-                # self.GenerateSingleBlock(self.tile_size*(wp-1.5), -self.height, self.tile_size*(hp-1.5), self.tile_size, color, 'tile')
-                # print('gg')
-                # self.DrawSingleComp(wp,self.height,hp)
-    def GenerateTiles(self):
-        h,w = self.map.shape
-
-        for hp in range(4*h):
-            if hp%2 == 1:
-                color = 'black'
-            else:
-                color = 'white'
-
-            print('gg')
-        for wp in range(4*w):
-            if wp%2 == 1:
-                color = 'black'
-            else:
-                color = 'white'
-            print(color)
-        pass
-    def GenerateWalls_old(self, test: int=0):
-        size = self.tile_size/4
-        color = 'white'
-        threshold = 0
-        edge_location=1.875*self.tile_size
-        
-        for i in range(16):
-            for j in range(9):
-                if i%2 == j%2:
-                    color = 'black'
-                else:
-                    color = 'white'
-                    # checker shape
-                # ** Notice: -edge_location+size*i or +edge_location+size*i will give opposite side of edges
-                # ** Notice: Changing x and z coordinate will give wall at other axis
-                if test == 0:
-                    self.GenerateSingleBlock(edge_location, j*size + threshold, -edge_location + size * i, size, color)
-                elif test == 1:
-                    self.GenerateSingleBlock(-edge_location + size * i, j*size + threshold, -edge_location, size, color)
-                elif test == 2:
-                    self.GenerateSingleBlock(-edge_location, j*size + threshold, -edge_location + size * i, size, color)
-                elif test == 3:
-                    self.GenerateSingleBlock(-edge_location + size * i, j*size + threshold, edge_location, size, color)
-
+    
     def GenerateWalls(self):
         for i, coord in enumerate(self.wall_list):
             x = coord[0]
             z = coord[1]
             l = len(self.color_list)
             color = self.color_list[i%l]
-            # self.GenerateSingleBlock(x*4*self.tile_size, self.tile_size*1.2, z*4*self.tile_size, 4*self.tile_size, color, 'block')
             self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
-            # print('hhhh')
+
     def DrawSingleComp(self, x=0,y=-0.155,z=0, size_x=0.1, size_z = 0.1,color='bb'):
         glBegin(GL_QUADS)
         if color == 'white':
@@ -135,13 +58,9 @@ class GraphicsGenerator:
             glColor3f(0.12,0.12,0.12)
         else:
             glColor3f(0.65,0.47,0.98)
-        # glTexCoord2d(0.0, 0.0)
         glVertex3f(-size_x+x,y,size_z+z)
-        # glTexCoord2d(1.0, 0.0)
         glVertex3f(size_x+x,y,size_z+z)
-        # glTexCoord2d(1.0, 1.0)
         glVertex3f(size_x+x,y,-size_z+z)
-        # glTexCoord2d(0.0, 1.0)
         glVertex3f(-size_x+x,y,-size_z+z)
         glEnd()
     def DrawFloor(self):
@@ -150,7 +69,6 @@ class GraphicsGenerator:
         centercoord_z = 2*(H-1)*self.tile_size
         centercoord_x = 2*(W-1)*self.tile_size
         self.DrawSingleComp(centercoord_x, -self.height, centercoord_z, size_x=2*W*self.tile_size, size_z = 2*H*self.tile_size, color='white')
-        # self.DrawSingleComp(0,-self.height+0.001,centercoord_z,size_x = 0.001,size_z=centercoord_z*2, color='black')
         for wp in range(4*(W)+1):
             self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.00375,size_z=2*H*self.tile_size, color='black')
         for hp in range(4*(H)+1):
@@ -275,16 +193,48 @@ class GraphicsGenerator:
         self.h = h
         glViewport(0,0,self.w, self.h)
         glutPostRedisplay()
+    def Translation(self,x,z):
+        """
+        First Check that the position to move is not with in the wall
 
+        """
+        check_x = self.trans_mat[0,3] + x
+        check_z = self.trans_mat[2,3] + z
+
+        room_size = self.tile_size * 4
+
+        x_index = int(check_x//room_size)
+        z_index = int(check_z//room_size)
+        print("point world is ", check_z, " ", check_x)
+        print("pos is ", z_index, " ", x_index)
+        print("current trans_mat is\n", self.trans_mat)
+        if check_x > self.maze.width-room_size/2 or check_x < -room_size/2 or check_z > self.maze.width-room_size/2 or check_z < -room_size/2:
+            print("Walking Out of The Maze, can't Move")
+            return
+        if self.map[z_index,x_index] == 0:
+            print("WAlking Towards Wall, Can't Move")
+            return
+        else:
+            self.trans_mat[0,3] = check_x
+            self.trans_mat[2,3] = check_z
+    
     def keyboard(self, key, x, y):
+        x=0
+        z=0
         if key == b'w' or key == b'W':
-            self.trans_mat[2,3] = self.trans_mat[2,3] + self.move_speed
+            x = 0
+            z = self.move_speed
         if key == b's' or key == b'S':
-            self.trans_mat[2,3] = self.trans_mat[2,3] - self.move_speed
+            x = 0
+            z = -self.move_speed
         if key == b'a' or key == b'A':
-            self.trans_mat[0,3] = self.trans_mat[0,3] + self.move_speed
+            x = self.move_speed
+            z = 0
         if key == b'd' or key == b'D':
-            self.trans_mat[0,3] = self.trans_mat[0,3] - self.move_speed
+            x = -self.move_speed
+            z = 0
+        
+        self.Translation(x,z)
         
         if key == b'u' or key == b'U':
             self.reset_pos(0)
@@ -306,11 +256,14 @@ class GraphicsGenerator:
         # 100 is left and 102 is right
         if key == 100:
             temp_rot = self.rotation(self.degree_speed)
-
+            print("current trans_mat b is\n", self.trans_mat)
             self.trans_mat = temp_rot @ self.trans_mat
+            print("current trans_mat a is\n", self.trans_mat)
         if key == 102:
             temp_rot = self.rotation(-self.degree_speed)
+            print("current trans_mat b is\n", self.trans_mat)
             self.trans_mat = temp_rot @ self.trans_mat
+            print("current trans_mat a is\n", self.trans_mat)
         # self.characterController.InputSpecial(key)
         glutPostRedisplay()
     
@@ -330,15 +283,15 @@ class GraphicsGenerator:
         if pos == 0:
             temp_trans[2,3] = -0.75
             degree = 0
-            pass
+            
         elif pos == 1:
             temp_trans[0,3] = -0.75
             degree = 90
-            pass
+            
         elif pos == 2:
             temp_trans[2,3] = 0.75
             degree = 180
-            pass
+            
         elif pos==3:
             temp_trans[0,3] = 0.75
             degree = 270
