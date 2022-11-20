@@ -17,8 +17,8 @@ class GraphicsGenerator:
         self.move_speed = 0.05
         self.degree_speed = 5
 
-        self.w = 800
-        self.h = 800
+        self.w = 1600
+        self.h = 900
 
         self.reset_pos(8)
 
@@ -150,9 +150,9 @@ class GraphicsGenerator:
         self.DrawSingleComp(centercoord_x, -self.height, centercoord_z, size_x=2*W*self.tile_size, size_z = 2*H*self.tile_size, color='white')
         # self.DrawSingleComp(0,-self.height+0.001,centercoord_z,size_x = 0.001,size_z=centercoord_z*2, color='black')
         for wp in range(4*(W)+1):
-            self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.005,size_z=2*H*self.tile_size, color='black')
+            self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.0075,size_z=2*H*self.tile_size, color='black')
         for hp in range(4*(H)+1):
-            self.DrawSingleComp(centercoord_x,-self.height+0.001,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.005, color='black')
+            self.DrawSingleComp(centercoord_x,-self.height+0.001,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.0075, color='black')
 
     def GenerateSingleBlock(self, x,y,z, size=0.25, color='black', mode='block'):
         # **!! This function must be just under the cam setting and transformation matrix !!**
@@ -227,9 +227,9 @@ class GraphicsGenerator:
         pass
     
     def perspective(self, fov):
-        self.camz = self.h/800/np.tan((np.pi/180)*fov/2)
-        self.nearz = self.camz * 0.95 # self.camz - 7/8
-        self.farz = self.camz * 3
+        self.camz = self.h/900/np.tan((np.pi/180)*fov/2)
+        self.nearz = self.camz * 0.98 # self.camz - 7/8
+        self.farz = self.camz * 4.6
 
     def GenerateGraphics(self):
         """
@@ -245,12 +245,12 @@ class GraphicsGenerator:
         glLoadIdentity()
         
         self.perspective(45)
-        glFrustum(-self.w/800/8,self.w/800/8,-self.h/800/8,self.h/800/8, self.nearz, self.farz)
+        glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
 
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        gluLookAt(0,0.25,self.camz, 0,0,0, 0,1,0)
+        gluLookAt(0,0.3,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat).T)
         # glutSolidTeapot(0.125)
 
