@@ -12,12 +12,14 @@ class GraphicsGenerator:
         self.maze = maze
         self.map = maze.pathMap
         self.wall_list = maze.walls
-        self.characterController = ()
         self.tile_size = 0.25
+        self.characterController = CharacterController(self.maze, self.tile_size)
         self.height = 0.2
 
+        self.rotation_angle = 180
+
         self.move_speed = 0.05
-        self.degree_speed = 5
+        self.degree_speed = 45
 
         self.w = 1600
         self.h = 900
@@ -44,8 +46,8 @@ class GraphicsGenerator:
     
     def GenerateWalls(self):
         for i, coord in enumerate(self.wall_list):
-            x = coord[0]
-            z = coord[1]
+            x = coord[1]
+            z = coord[0]
             l = len(self.color_list)
             color = self.color_list[i%l]
             self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
@@ -193,31 +195,22 @@ class GraphicsGenerator:
         self.h = h
         glViewport(0,0,self.w, self.h)
         glutPostRedisplay()
+        
     def Translation(self,x,z):
         """
         First Check that the position to move is not with in the wall
 
         """
-        check_x = self.trans_mat[0,3] + x
-        check_z = self.trans_mat[2,3] + z
+        rotation = np.eye(4)
+        rotation[0,0] = np.cos(np.radians(-self.rotation_angle))
+        rotation[0,2] = -np.sin(np.radians(-self.rotation_angle))
+        rotation[2,0] = np.sin(np.radians(-self.rotation_angle))
+        rotation[2,2] = np.cos(np.radians(-self.rotation_angle))
+        direction = np.array([x,0,z,1])
+        if self.characterController.Translation(rotation, direction):
+            self.trans_mat[0,3] = self.trans_mat[0,3] + x
+            self.trans_mat[2,3] = self.trans_mat[2,3] + z
 
-        room_size = self.tile_size * 4
-
-        x_index = int(check_x//room_size)
-        z_index = int(check_z//room_size)
-        print("point world is ", check_z, " ", check_x)
-        print("pos is ", z_index, " ", x_index)
-        print("current trans_mat is\n", self.trans_mat)
-        if check_x > self.maze.width-room_size/2 or check_x < -room_size/2 or check_z > self.maze.width-room_size/2 or check_z < -room_size/2:
-            print("Walking Out of The Maze, can't Move")
-            return
-        if self.map[z_index,x_index] == 0:
-            print("WAlking Towards Wall, Can't Move")
-            return
-        else:
-            self.trans_mat[0,3] = check_x
-            self.trans_mat[2,3] = check_z
-    
     def keyboard(self, key, x, y):
         x=0
         z=0
@@ -256,18 +249,17 @@ class GraphicsGenerator:
         # 100 is left and 102 is right
         if key == 100:
             temp_rot = self.rotation(self.degree_speed)
-            print("current trans_mat b is\n", self.trans_mat)
             self.trans_mat = temp_rot @ self.trans_mat
-            print("current trans_mat a is\n", self.trans_mat)
         if key == 102:
             temp_rot = self.rotation(-self.degree_speed)
-            print("current trans_mat b is\n", self.trans_mat)
             self.trans_mat = temp_rot @ self.trans_mat
-            print("current trans_mat a is\n", self.trans_mat)
         # self.characterController.InputSpecial(key)
         glutPostRedisplay()
     
     def rotation(self, degree = 10):
+        
+        self.rotation_angle += degree
+    
         temp_rot = np.eye(4)
         rad = degree * np.pi / 180
         temp_rot[0,0] = np.cos(rad)
@@ -296,13 +288,13 @@ class GraphicsGenerator:
             temp_trans[0,3] = 0.75
             degree = 270
         else:
-            degree = 225
+            degree = self.rotation_angle
         
         self.trans_mat = self.rotation(degree)@temp_trans
     def Update(self):
         glutInit()
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
-        glutInitWindowSize(1600, 900) #-> Sys get full height width
+        glutInitWindowSize(800, 800) #-> Sys get full height width
         glutInitWindowPosition(0, 0)
         glutCreateWindow(b"Maze Simulator")
 
@@ -312,7 +304,6 @@ class GraphicsGenerator:
         # glutMouseFunc(self.mouse)
         # glutMotionFunc(self.motion)
         glutReshapeFunc(self.reshape)
-
         self.light()
 
         glutMainLoop()
