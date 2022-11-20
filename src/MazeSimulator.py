@@ -2,19 +2,19 @@
 # Basic Modules
 
 # import our models
-from MazeGenerator import MazeGenerator # -> Create Maze, after that useless
-from GraphicsGenerator import GraphicsGenerator
-
+from MazeGenerator import*  # -> Create Maze, after that useless
+from GraphicsGenerator import*
+ 
 class Simulator:
     def __init__(self):
-        width = 51
-        height = 51
-        entrancePoint = (0, 0)
+        width = 4
+        height = 4
+        entrancePoint = (0,0)
         exitPoint = (width-1, height-1)
-        mazeGenerator = MazeGenerator(width, height, entrancePoint, exitPoint)
-        self.maze = mazeGenerator.GenerateMaze()
+        mazeGenerator = MazeGenerator()
+        maze = mazeGenerator.GenerateMaze(width, height, entrancePoint, exitPoint)
 
-        self.graphicsGenerator = GraphicsGenerator(self.maze)
+        self.graphicsGenerator = GraphicsGenerator(maze)
 
     def RunSimulator(self):
         self.graphicsGenerator.Update()

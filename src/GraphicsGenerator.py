@@ -10,6 +10,8 @@ import numpy as np
 class GraphicsGenerator:
     def __init__(self, maze):
         self.maze = maze
+        self.map = maze.pathMap
+        self.wall_list = maze.walls
         self.characterController = ()
         self.tile_size = 0.25
         self.height = 0.2
@@ -53,7 +55,7 @@ class GraphicsGenerator:
         glEnable(GL_LIGHT0)
 
     def GererateCheckerTexture(self):
-        h,w = self.maze.shape
+        h,w = self.map.shape
         textbase = np.zeros((4*h, 4*w))
         # h is z direction and w is x direction.
 
@@ -65,7 +67,7 @@ class GraphicsGenerator:
     def GenerateTiles_old(self):
         # y value is fixed. and then x/z vaule varies.
         # H is z and W is x
-        h,w = self.maze.shape
+        h,w = self.map.shape
         for hp in range(4*h):
             for wp in range(4*w):
                 if hp%2 != wp%2:
@@ -76,7 +78,7 @@ class GraphicsGenerator:
                 # print('gg')
                 # self.DrawSingleComp(wp,self.height,hp)
     def GenerateTiles(self):
-        h,w = self.maze.shape
+        h,w = self.map.shape
 
         for hp in range(4*h):
             if hp%2 == 1:
@@ -117,7 +119,7 @@ class GraphicsGenerator:
                     self.GenerateSingleBlock(-edge_location + size * i, j*size + threshold, edge_location, size, color)
 
     def GenerateWalls(self):
-        for i, coord in enumerate(self.test_wall_list):
+        for i, coord in enumerate(self.wall_list):
             x = coord[0]
             z = coord[1]
             l = len(self.color_list)
@@ -143,16 +145,17 @@ class GraphicsGenerator:
         glVertex3f(-size_x+x,y,-size_z+z)
         glEnd()
     def DrawFloor(self):
-        H = self.maze.shape[0]
-        W = self.maze.shape[1]
+        H = self.map.shape[0]
+        W = self.map.shape[1]
         centercoord_z = 2*(H-1)*self.tile_size
         centercoord_x = 2*(W-1)*self.tile_size
         self.DrawSingleComp(centercoord_x, -self.height, centercoord_z, size_x=2*W*self.tile_size, size_z = 2*H*self.tile_size, color='white')
         # self.DrawSingleComp(0,-self.height+0.001,centercoord_z,size_x = 0.001,size_z=centercoord_z*2, color='black')
         for wp in range(4*(W)+1):
-            self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.0075,size_z=2*H*self.tile_size, color='black')
+            self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.00375,size_z=2*H*self.tile_size, color='black')
         for hp in range(4*(H)+1):
-            self.DrawSingleComp(centercoord_x,-self.height+0.001,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.0075, color='black')
+            self.DrawSingleComp(centercoord_x,-self.height+0.0011,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.00375, color='black')
+            pass
 
     def GenerateSingleBlock(self, x,y,z, size=0.25, color='black', mode='block'):
         # **!! This function must be just under the cam setting and transformation matrix !!**
@@ -250,7 +253,7 @@ class GraphicsGenerator:
         glMatrixMode(GL_MODELVIEW)
         glClear(GL_COLOR_BUFFER_BIT)
         glLoadIdentity()
-        gluLookAt(0,0.3,self.camz, 0,0,0, 0,1,0)
+        gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat).T)
         # glutSolidTeapot(0.125)
 
