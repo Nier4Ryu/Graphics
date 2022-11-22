@@ -45,8 +45,8 @@ class CharacterController:
         self.pos[2,3] = (self.entrancePoint[1] * 4 + 2) * self.tile_size
 
         # Rotation Degree
-        self.rotation_mat = np.eye(4)
-        self.rotation_angle = 180
+        # self.rotation_mat = np.eye(4)
+        # self.rotation_angle = 180
 
         # 4 Rotation Matrixes for wasd movement
         # Forward is ? Direction
@@ -79,8 +79,8 @@ class CharacterController:
         """
         # Make Temp Points
         translation = rotation @ direction
-        temp_x = self.pos[0,3] + translation[0]
-        temp_z = self.pos[2,3] + translation[2]
+        temp_x = self.pos[0,3] + 4*translation[0]
+        temp_z = self.pos[2,3] + 4*translation[2]
         check_x = math.floor(temp_x / self.room_size)
         check_z = math.floor(temp_z / self.room_size)
 
@@ -102,8 +102,8 @@ class CharacterController:
             # return True
             return False
         else:
-            self.pos[0,3] = temp_x
-            self.pos[2,3] = temp_z
+            self.pos[0,3] = self.pos[0,3] + translation[0]#temp_x
+            self.pos[2,3] = self.pos[2,3] + translation[2]#temp_z
             print("maze is\n",self.maze.pathMap)
             print("rotation is\n", rotation[0:3, 0:3])
             print("pos is\n", self.pos[0:3,3])
@@ -113,6 +113,7 @@ class CharacterController:
         self.pos = np.eye(4)
         self.pos[0,3] = (self.entrancePoint[0] * 4 + 2) * self.tile_size 
         self.pos[2,3] = (self.entrancePoint[1] * 4 + 2) * self.tile_size
+        print("Controller Position Reset")
         
     def UpdateState(self):
         """
