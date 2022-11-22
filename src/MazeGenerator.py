@@ -11,6 +11,7 @@ Maze Info
 # Numpy is used to convert non np array to np array
 import numpy as np
 import sys
+import math
 
 # Python3 code to implement the approach
 from random import randint
@@ -61,6 +62,9 @@ class Maze:
 
         self.walls = []
 
+        self.marks = []
+        self.num_marks_max = 10
+
         self.pathMap = None
         self.objectsMap = None
 
@@ -84,6 +88,21 @@ class Maze:
             for j in range(self.height):
                 if self.pathMap[i,j]==0:
                     self.walls.append((i,j))
+
+    def PushMarks(self, pos, mark_type):
+        """
+        Create a position (parse pos)
+        create a mark
+        append to self.marks
+        pop if num over max
+        """
+        pos_x = pos[2,3]
+        pos_z = pos[0,3]
+        self.marks.append((pos_x, pos_z, mark_type))
+        if len(self.marks) > self.num_marks_max:
+            self.marks.pop(0)
+        print("Creating Marks\n",self.marks)
+
 class MazeGenerator:
     def __init__(self):
         pass

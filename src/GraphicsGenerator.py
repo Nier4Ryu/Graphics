@@ -55,7 +55,7 @@ class GraphicsGenerator:
             color = self.color_list[i%l]
             self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
 
-    def DrawSingleComp(self, x=0,y=-0.155,z=0, size_x=0.1, size_z = 0.1,color='bb'):
+    def DrawSingleComp(self, x=0.0,y=-0.155,z=0.0, size_x=0.1, size_z = 0.1,color='bb'):
         glBegin(GL_QUADS)
         if color == 'white':
             glColor3f(0.75, 0.75, 0.75)
@@ -78,7 +78,6 @@ class GraphicsGenerator:
             self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.00375,size_z=2*H*self.tile_size, color='black')
         for hp in range(4*(H)+1):
             self.DrawSingleComp(centercoord_x,-self.height+0.0011,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.00375, color='black')
-            pass
 
     def GenerateSingleBlock(self, x,y,z, size=0.25, color='black', mode='block'):
         # **!! This function must be just under the cam setting and transformation matrix !!**
@@ -119,7 +118,7 @@ class GraphicsGenerator:
         elif color == 'gray':
             glColor3f(0.75,0.75,0.75)
         else:
-            glColor3f(0.35,0.84,0.42)
+            glColor3f(0.99,0.99,0.99)
 
         if mode=='tile':
             sc_mat = np.eye(4)
@@ -133,12 +132,24 @@ class GraphicsGenerator:
         elif mode=='block':
             glMultMatrixf(trans_mat.T)
             glutSolidCube(size)
+            glColor3f(0.99,0.99,0.99)
+            glutWireCube(size)
             glMultMatrixf(trans_mat_i.T)
-
+        
         glColor3f(1.0,1.0,1.0)
 
     def GenerateMarks(self):
-        pass
+        for m in self.maze.marks:
+            x = m[1] - 2*self.tile_size
+            z = m[0] - 2*self.tile_size
+            mark_type = m[2]
+            if mark_type == 'A':
+                color = 'red'
+            if mark_type == 'B':
+                color = 'green'
+            if mark_type == 'C':
+                color = 'blue'
+            self.DrawSingleComp(x, -self.height+0.0012, z, self.tile_size, self.tile_size,color=color)
 
     def GenerateTraps(self):
         pass
@@ -150,6 +161,13 @@ class GraphicsGenerator:
         pass
 
     def GenerateClock(self):
+        pass
+
+    def GenerateNotice(self):
+        """
+        Notify the player of the current state with a box
+        ex)if red -> You are trying to walk through the walls -> not allowed
+        """
         pass
     
     def perspective(self, fov):
@@ -170,7 +188,7 @@ class GraphicsGenerator:
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
         
-        self.perspective(45)
+        self.perspective(60)
         glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
 
         glMatrixMode(GL_MODELVIEW)
@@ -185,7 +203,11 @@ class GraphicsGenerator:
         # Floor Generation
         self.DrawFloor()
 
+        self.GenerateMarks()
+
         glLoadIdentity()
+
+        self.draw_all_axis()
 
         glutSwapBuffers()
 
@@ -202,7 +224,6 @@ class GraphicsGenerator:
     def Translation(self,x,z):
         """
         First Check that the position to move is not with in the wall
-
         """
         rotation = np.eye(4)
         print(self.rotation_angle)
@@ -243,7 +264,10 @@ class GraphicsGenerator:
             self.reset_pos(3)
         if key == b'l' or key == b'L':
             self.reset_pos(8)
-        
+
+        if key == b'm' or key == b'M':
+            self.maze.PushMarks(self.characterController.pos,'A')
+
         if key == b'\x1b':
             print('Good bye')
             glutLeaveMainLoop()
@@ -298,6 +322,43 @@ class GraphicsGenerator:
             self.characterController.Reset()
         
         self.trans_mat = self.rotation(degree)@temp_trans
+    def setcoord(self, x,y,z):
+        arr = np.eye(4)
+        arr[0,3] = x
+        arr[1,3] = y
+        arr[2,3] = z
+        return arr
+    def scale_cuboid(self, index=0):
+        x = np.eye(4)
+        x[index, index] = 20
+        return x
+
+    def draw_axis(self, index=0):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, -6, 3)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        axis_move = [0,0,0]
+        axis_move[index] = 0.1
+        rot_mat = np.eye(4)
+        rot_mat[0:3,0:3] = self.trans_mat[0:3,0:3].T
+
+        glMultMatrixf((self.setcoord(-0.8*self.w/800,-0.8*self.h/800,5)@rot_mat@self.setcoord(axis_move[0],axis_move[1],axis_move[2])@self.scale_cuboid(index)).T)
+        glutSolidCube(0.01)
+        glLoadIdentity()
+    def draw_all_axis(self):
+        self.characterController.AngleToExit()
+        glColor3f(1.0,0.0,0.0)
+        self.draw_axis(0)
+        glColor3f(0.0,1.0,0.0)
+        self.draw_axis(1)
+        glColor3f(0.0,0.0,1.0)
+        self.draw_axis(2)
+        glColor3f(1,1,1)
+
     def Update(self):
         glutInit()
         glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
