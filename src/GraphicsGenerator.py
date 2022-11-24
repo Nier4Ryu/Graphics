@@ -20,8 +20,8 @@ class GraphicsGenerator:
         # self.rotation_angle = 180
 
         self.move_speed = 0.05
-        self.degree_speed = 15
-
+        self.degree_speed = 5
+        self.is_BEV = False
         self.w = 1600
         self.h = 900
         print(self.initial_angle)
@@ -54,6 +54,10 @@ class GraphicsGenerator:
             l = len(self.color_list)
             color = self.color_list[i%l]
             self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
+            self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+            self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+            self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+            self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
 
     def DrawSingleComp(self, x=0.0,y=-0.155,z=0.0, size_x=0.1, size_z = 0.1,color='bb'):
         glBegin(GL_QUADS)
@@ -116,16 +120,16 @@ class GraphicsGenerator:
         elif color == 'magenta':
             glColor3f(0.750,0.250,0.625)
         elif color == 'gray':
-            glColor3f(0.75,0.75,0.75)
+            glColor3f(0.56,0.56,0.56)
         else:
             glColor3f(0.99,0.99,0.99)
 
-        if mode=='tile':
+        if mode=='column':
             sc_mat = np.eye(4)
-            sc_mat[1,1]=0.1
+            sc_mat[1,1]=100
             glMultMatrixf(trans_mat.T)
             glMultMatrixf(sc_mat.T)
-            glutSolidCube(size)
+            glutSolidCube(size/100)
             sc_mat[1,1]=1/sc_mat[1,1]
             glMultMatrixf(sc_mat.T)
             glMultMatrixf(trans_mat_i.T)
@@ -169,6 +173,11 @@ class GraphicsGenerator:
         ex)if red -> You are trying to walk through the walls -> not allowed
         """
         pass
+
+    def DisplayWasted(self):
+        # This part displays wasted scene when the player is caught by a trap.
+        # Implement alpha blending.
+        pass
     
     def perspective(self, fov):
         self.camz = self.h/900/np.tan((np.pi/180)*fov/2)
@@ -187,14 +196,26 @@ class GraphicsGenerator:
 
         glMatrixMode(GL_PROJECTION)
         glLoadIdentity()
-        
-        self.perspective(60)
-        glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
+        if self.is_BEV == True:
+            self.camz = 1
+            self.nearz = -1
+            self.farz = 6.0
+            glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, self.nearz, self.farz)
+            glMatrixMode(GL_MODELVIEW)
+            glClear(GL_COLOR_BUFFER_BIT)
+            glLoadIdentity()
+            gluLookAt(0,4,0, 0,0,0, 0,0,-1)
+        else:
+            self.perspective(60)
+            glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
 
-        glMatrixMode(GL_MODELVIEW)
-        glClear(GL_COLOR_BUFFER_BIT)
-        glLoadIdentity()
-        gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
+            glMatrixMode(GL_MODELVIEW)
+            glClear(GL_COLOR_BUFFER_BIT)
+            glLoadIdentity()
+            gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
+        
+
+        
         glMultMatrixf((self.trans_mat).T)
         # glutSolidTeapot(0.125)
 
@@ -204,10 +225,14 @@ class GraphicsGenerator:
         self.DrawFloor()
 
         self.GenerateMarks()
+        # self.GenerateSingleBlock(0.1,0.1,0.1,0.25,'black', 'column')
 
         glLoadIdentity()
 
         self.draw_all_axis()
+        if self.is_BEV == True:
+            glColor3f(0.860,0.0625,0.0625)
+            glutSolidCube(0.2)
 
         glutSwapBuffers()
 
@@ -267,6 +292,8 @@ class GraphicsGenerator:
 
         if key == b'm' or key == b'M':
             self.maze.PushMarks(self.characterController.pos,'A')
+        if key == b'b' or key == b'B':
+            self.is_BEV = not self.is_BEV
 
         if key == b'\x1b':
             print('Good bye')

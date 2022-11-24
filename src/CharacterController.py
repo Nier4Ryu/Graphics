@@ -72,7 +72,8 @@ class CharacterController:
 
             # Check If pos is updatable
             # Out of Maze Check
-            if check_x>self.mazeWidth-1 or check_x<0 or check_z>self.mazeHeight-1 or check_z<0:
+            if check_x>self.mazeHeight-1 or check_x<0 or check_z>self.mazeWidth-1 or check_z<0:
+                # This part was actually reversed.
                 print("maze is\n",self.maze.pathMap)
                 print("rotation is\n", rotation[0:3, 0:3])
                 print("pos is\n", self.pos[0:3,3])

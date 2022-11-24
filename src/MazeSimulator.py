@@ -7,8 +7,8 @@ from GraphicsGenerator import*
  
 class Simulator:
     def __init__(self):
-        width = 51
-        height = 51
+        width = 10
+        height = 15
         entrancePoint = (0,0)
         exitPoint = (width-1, height-1)
         mazeGenerator = MazeGenerator()
