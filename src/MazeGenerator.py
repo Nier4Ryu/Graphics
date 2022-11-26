@@ -62,6 +62,8 @@ class Maze:
 
         self.walls = []
 
+        self.walls_temp = []
+
         self.marks = []
         self.num_marks_max = 10
 
@@ -83,12 +85,37 @@ class Maze:
     def CountWalls(self):
         """
         Create A list of walls
+
+        1) Calculate the L2 => square root Distance
+        2) Calculate the L1 => abs Distance -> THis is the one to use for now           
         """
+        exit_x = self.exitPoint[0]
+        exit_z = self.exitPoint[1]
+
+        max_distance_x = max(exit_x, self.width -1 -exit_x)
+        max_distance_z = max(exit_z, self.height -1 -exit_z)
+        max_distance = max_distance_x + max_distance_z
+
+        space = 6
+
+        for i in range(math.ceil(max_distance/space)):
+            self.walls_temp.append([])
+
         for i in range(self.width):
             for j in range(self.height):
                 if self.pathMap[i,j]==0:
                     self.walls.append((i,j))
+                    
+                    # Calculate L1 Distance
+                    delta_x = i-exit_x
+                    delta_z = j-exit_z
+                    distance = abs(delta_x) + abs(delta_z)
+                    self.walls_temp[math.ceil(distance/space)-1].append((i,j))
 
+        print("walls arranged in distance is")
+        for walls in self.walls_temp:
+            print("walls is :: ", walls)
+                    
     def PushMarks(self, pos, mark_type):
         """
         Create a position (parse pos)

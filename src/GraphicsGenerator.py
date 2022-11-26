@@ -158,8 +158,53 @@ class GraphicsGenerator:
         pass
 
     def GenerateCompass(self):
-        pass
+        """
+        Generate a Compass Object that points towards the exit point
+        1) A Wire Shpere That in capsulates the needle
+        2) A needle rotating with in the capsule
+        """
+        rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
+        print("rotAngle is ", rotAngle)
+        
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
 
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        
+        glutWireSphere(0.01, 50, 50)
+
+        glColor4f(0, 0, 1, 0)
+        # Draw the lines
+        glBegin(GL_LINES)
+        # Reference Line
+        glColor4f(1, 0, 0, 0)
+        glVertex3f(0.0, 0.0, 0.0)
+        glVertex3f(0.0, 0.0, 0.1)
+        glEnd()
+
+        # Rot about y axis
+        rotMat = np.eye(4)
+        rotMat[0,0] = np.cos(np.radians(rotAngle))
+        rotMat[0,2] = -np.sin(np.radians(rotAngle))
+        rotMat[2,0] = np.sin(np.radians(rotAngle))
+        rotMat[2,2] = np.cos(np.radians(rotAngle))
+        glMultMatrixd(rotMat)
+        # Rot about x axis to give some 3d like image
+        rotAngle = -30
+        rotMat = np.eye(4)
+        rotMat[1,1] = np.cos(np.radians(rotAngle))
+        rotMat[1,2] = -np.sin(np.radians(rotAngle))
+        rotMat[2,1] = np.sin(np.radians(rotAngle))
+        rotMat[2,2] = np.cos(np.radians(rotAngle))
+        glMultMatrixd(rotMat)
+        
+        glBegin(GL_LINES)
+        # Z Line
+        glColor4f(0, 0, 1, 0)
+        glVertex3f(0.0, 0.0, 0.0)
+        glVertex3f(0.0, 0.0, 0.1)
+        glEnd()
     def GenerateClock(self):
         pass
 
@@ -196,18 +241,16 @@ class GraphicsGenerator:
         glLoadIdentity()
         gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
         glMultMatrixf((self.trans_mat).T)
-        # glutSolidTeapot(0.125)
 
-        # Wall Generation test
+        # Wall Generation
         self.GenerateWalls()
         # Floor Generation
         self.DrawFloor()
-
+        # Mark Generation
         self.GenerateMarks()
 
-        glLoadIdentity()
-
-        self.draw_all_axis()
+        # Compass Generation
+        self.GenerateCompass()
 
         glutSwapBuffers()
 
@@ -226,15 +269,19 @@ class GraphicsGenerator:
         First Check that the position to move is not with in the wall
         """
         rotation = np.eye(4)
-        print(self.rotation_angle)
         rotation[0,0] = np.cos(np.radians(-(self.rotation_angle-180)))
         rotation[0,2] = -np.sin(np.radians(-(self.rotation_angle-180)))
         rotation[2,0] = np.sin(np.radians(-(self.rotation_angle-180)))
         rotation[2,2] = np.cos(np.radians(-(self.rotation_angle-180)))
         direction = np.array([x,0,z,1])
+
         if self.characterController.Translation(rotation, direction):
             self.trans_mat[0,3] = self.trans_mat[0,3] + x
-            self.trans_mat[2,3] = self.trans_mat[2,3] + z
+            self.trans_mat[2,3] = self.trans_mat[2,3] + z    
+        
+        # trans_x, trans_z = self.characterController.Translation2(rotation, direction)
+        # self.trans_mat[0,3] += trans_x
+        # self.trans_mat[2,3] += trans_z        
 
     def keyboard(self, key, x, y):
         x=0
@@ -349,6 +396,7 @@ class GraphicsGenerator:
         glMultMatrixf((self.setcoord(-0.8*self.w/800,-0.8*self.h/800,5)@rot_mat@self.setcoord(axis_move[0],axis_move[1],axis_move[2])@self.scale_cuboid(index)).T)
         glutSolidCube(0.01)
         glLoadIdentity()
+        
     def draw_all_axis(self):
         self.characterController.AngleToExit()
         glColor3f(1.0,0.0,0.0)
