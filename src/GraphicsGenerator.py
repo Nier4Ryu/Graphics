@@ -8,7 +8,7 @@ from OpenGL.GLUT import *
 import numpy as np
 
 class GraphicsGenerator:
-    def __init__(self, maze):
+    def __init__(self, maze, angle):
         self.maze = maze
         self.map = maze.pathMap
         self.wall_list = maze.walls
@@ -16,7 +16,7 @@ class GraphicsGenerator:
         self.characterController = CharacterController(self.maze, self.tile_size)
         self.height = 0.2
 
-        self.initial_angle = 225
+        self.initial_angle = angle
         # self.rotation_angle = 180
 
         self.move_speed = 0.05
@@ -48,16 +48,17 @@ class GraphicsGenerator:
         glEnable(GL_LIGHT0)
     
     def GenerateWalls(self):
-        for i, coord in enumerate(self.wall_list):
-            x = coord[1]
-            z = coord[0]
-            l = len(self.color_list)
-            color = self.color_list[i%l]
-            self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
-            self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-            self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-            self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-            self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+        for i, dist in enumerate(self.wall_list):
+            for coord in dist:
+                x = coord[1]
+                z = coord[0]
+                l = len(self.color_list)
+                color = self.color_list[i%l]
+                self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
+                self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
 
     def DrawSingleComp(self, x=0.0,y=-0.155,z=0.0, size_x=0.1, size_z = 0.1,color='bb'):
         glBegin(GL_QUADS)
@@ -162,7 +163,53 @@ class GraphicsGenerator:
         pass
 
     def GenerateCompass(self):
-        pass
+        """
+        Generate a Compass Object that points towards the exit point
+        1) A Wire Shpere That in capsulates the needle
+        2) A needle rotating with in the capsule
+        """
+        rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
+        print("rotAngle is ", rotAngle)
+        
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        
+        glutWireSphere(0.01, 50, 50)
+
+        glColor4f(0, 0, 1, 0)
+        # Draw the lines
+        glBegin(GL_LINES)
+        # Reference Line
+        glColor4f(1, 0, 0, 0)
+        glVertex3f(0.0, 0.0, 0.0)
+        glVertex3f(0.0, 0.0, 0.1)
+        glEnd()
+
+        # Rot about y axis
+        rotMat = np.eye(4)
+        rotMat[0,0] = np.cos(np.radians(rotAngle))
+        rotMat[0,2] = -np.sin(np.radians(rotAngle))
+        rotMat[2,0] = np.sin(np.radians(rotAngle))
+        rotMat[2,2] = np.cos(np.radians(rotAngle))
+        glMultMatrixd(rotMat)
+        # Rot about x axis to give some 3d like image
+        rotAngle = -30
+        rotMat = np.eye(4)
+        rotMat[1,1] = np.cos(np.radians(rotAngle))
+        rotMat[1,2] = -np.sin(np.radians(rotAngle))
+        rotMat[2,1] = np.sin(np.radians(rotAngle))
+        rotMat[2,2] = np.cos(np.radians(rotAngle))
+        glMultMatrixd(rotMat)
+        
+        glBegin(GL_LINES)
+        # Z Line
+        glColor4f(0, 0, 1, 0)
+        glVertex3f(0.0, 0.0, 0.0)
+        glVertex3f(0.0, 0.0, 0.1)
+        glEnd()
 
     def GenerateClock(self):
         pass
@@ -200,11 +247,13 @@ class GraphicsGenerator:
             self.camz = 1
             self.nearz = -1
             self.farz = 6.0
-            glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, self.nearz, self.farz)
+            glOrtho(-self.w/1600,self.w/1600,-self.h/1600,self.h/1600, self.nearz, self.farz)
             glMatrixMode(GL_MODELVIEW)
             glClear(GL_COLOR_BUFFER_BIT)
             glLoadIdentity()
-            gluLookAt(0,4,0, 0,0,0, 0,0,-1)
+            cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,0,1,0]]).T
+            print(cam_up_mat[0,0], cam_up_mat[2,0])
+            gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[2,0])
         else:
             self.perspective(60)
             glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
@@ -213,8 +262,6 @@ class GraphicsGenerator:
             glClear(GL_COLOR_BUFFER_BIT)
             glLoadIdentity()
             gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
-        
-
         
         glMultMatrixf((self.trans_mat).T)
         # glutSolidTeapot(0.125)
@@ -230,6 +277,7 @@ class GraphicsGenerator:
         glLoadIdentity()
 
         self.draw_all_axis()
+        # self.GenerateCompass()
         if self.is_BEV == True:
             glColor3f(0.860,0.0625,0.0625)
             glutSolidCube(0.2)
@@ -311,9 +359,9 @@ class GraphicsGenerator:
         # self.characterController.InputSpecial(key)
         glutPostRedisplay()
     
-    def rotation(self, degree = 10):
-        
-        self.rotation_angle += degree
+    def rotation(self, degree = 10, ch_global=True):
+        if ch_global == True:
+            self.rotation_angle += degree
     
         temp_rot = np.eye(4)
         rad = degree * np.pi / 180
@@ -377,7 +425,7 @@ class GraphicsGenerator:
         glutSolidCube(0.01)
         glLoadIdentity()
     def draw_all_axis(self):
-        self.characterController.AngleToExit()
+        rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
         glColor3f(1.0,0.0,0.0)
         self.draw_axis(0)
         glColor3f(0.0,1.0,0.0)

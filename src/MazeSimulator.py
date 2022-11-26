@@ -8,13 +8,14 @@ from GraphicsGenerator import*
 class Simulator:
     def __init__(self):
         width = 10
-        height = 15
+        height = 10
         entrancePoint = (0,0)
         exitPoint = (width-1, height-1)
         mazeGenerator = MazeGenerator()
         maze = mazeGenerator.GenerateMaze(width, height, entrancePoint, exitPoint)
 
-        self.graphicsGenerator = GraphicsGenerator(maze)
+        initial_angle = 225
+        self.graphicsGenerator = GraphicsGenerator(maze, initial_angle)
 
     def RunSimulator(self):
         self.graphicsGenerator.Update()

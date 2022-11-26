@@ -1,10 +1,10 @@
 # This is the Character Controller
 # Every Input to the Character would be given via this script
+import math
 import numpy as np
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
-import math
 
 class CharacterController:
     def __init__(self, maze, tile_size=0.25):
@@ -27,13 +27,14 @@ class CharacterController:
         # Tile Size info 
         self.tile_size = tile_size
         self.room_size = 4 * self.tile_size
-
+        
         # Maze Info
         self.maze = maze
         self.mazeWidth = maze.width
         self.mazeHeight = maze.height
-        self.entrancePoint = maze.entrancePoint
-        self.exitPoint = maze.exitPoint
+        self.entrancePoint = ((maze.entrancePoint[0] * 4 + 2) * self.tile_size, (maze.entrancePoint[1] * 4 + 2) * self.tile_size)
+        self.exitPoint = ((maze.exitPoint[0] * 4 + 2) * self.tile_size, (maze.exitPoint[1] * 4 + 2) * self.tile_size)
+        
         self.savePoint = maze.savePoint
 
         # PlayerInfo
@@ -41,11 +42,12 @@ class CharacterController:
 
         # Pos Info, Initialized to Entrance
         self.pos = np.eye(4)
-        self.pos[0,3] = (maze.entrancePoint[0] * 4 + 2) * self.tile_size 
-        self.pos[2,3] = (maze.entrancePoint[1] * 4 + 2) * self.tile_size
-        print("init\n", self.pos)
+        self.pos[0,3] = self.entrancePoint[0]
+        self.pos[2,3] = self.entrancePoint[1]
+
     def Translation(self, rotation, direction):
         """
+
         Translates the player.
         The Local Location is First Updated
         Depending on the Local Location Value, the Global location is Updated as well
@@ -54,7 +56,6 @@ class CharacterController:
         translation = rotation @ direction
         temp_x = self.pos[0,3] + translation[0]
         temp_z = self.pos[2,3] + translation[2]
-        print("at the beginning\n",self.pos)
 
         half_size = 0.1
 
@@ -72,8 +73,7 @@ class CharacterController:
 
             # Check If pos is updatable
             # Out of Maze Check
-            if check_x>self.mazeHeight-1 or check_x<0 or check_z>self.mazeWidth-1 or check_z<0:
-                # This part was actually reversed.
+            if check_x>self.mazeWidth-1 or check_x<0 or check_z>self.mazeHeight-1 or check_z<0:
                 print("maze is\n",self.maze.pathMap)
                 print("rotation is\n", rotation[0:3, 0:3])
                 print("pos is\n", self.pos[0:3,3])
@@ -86,7 +86,7 @@ class CharacterController:
                 print("pos is\n", self.pos[0:3,3])
                 print("You can't walk into walls: pos ", temp_z, " ", temp_x)
                 return False
-            # Maybe we can add sliding along the
+            # **!! Maybe we can add sliding along the wall !!** #
 
         self.pos[0,3] = temp_x
         self.pos[2,3] = temp_z
@@ -101,21 +101,15 @@ class CharacterController:
         self.pos[2,3] = (self.entrancePoint[1] * 4 + 2) * self.tile_size
         print("Controller Position Reset")
 
-    def AngleToExit(self, rotationAngle):
+    def AngleToExit(self):
         """
         Return Angle to Exit point, x/z coordinate
-        Prob -> This equation is based on the Fact that character is looking towards (0, -1) on x/z coordinate.
-        If the above assumption is broken, different results would be required
         """
-        deltaX = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[0,3]
-        deltaZ = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[2,3]
-        angleToExit = np.arctan2(deltaZ, deltaX)
-        
-        lookingAngle = np.radians((270 -rotationAngle)%360)
-        
-        angle = angleToExit - lookingAngle 
+        deltaX = self.exitPoint[0] - self.pos[0,3]
+        deltaZ = self.exitPoint[1] - self.pos[2,3]
+        angle = np.arctan2(deltaZ, deltaX)
         return angle
-        
+
     def UpdateState(self):
         """
         Updates the state of the player
