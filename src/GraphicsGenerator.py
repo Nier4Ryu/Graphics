@@ -6,6 +6,7 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 import numpy as np
+import time
 
 class GraphicsGenerator:
     def __init__(self, maze, angle):
@@ -25,9 +26,11 @@ class GraphicsGenerator:
         self.w = 1600
         self.h = 900
         print(self.initial_angle)
-        self.reset_pos(8)
+        self.reset_pos()
         print(self.initial_angle)
         print("outside",self.rotation_angle)
+
+        self.win = False
 
         self.color_list = ['red','orange','yellow','green','blue','indigo','violet']
         
@@ -66,6 +69,12 @@ class GraphicsGenerator:
             glColor3f(0.75, 0.75, 0.75)
         elif color == 'black':
             glColor3f(0.12,0.12,0.12)
+        elif color == 'red':
+            glColor3f(0.95,0.1,0.1)
+        elif color == 'green':
+            glColor3f(0.1,0.95,0.1)
+        elif color == 'blue':
+            glColor3f(0.1,0.1,0.95)
         else:
             glColor3f(0.65,0.47,0.98)
         glVertex3f(-size_x+x,y,size_z+z)
@@ -154,7 +163,7 @@ class GraphicsGenerator:
                 color = 'green'
             if mark_type == 'C':
                 color = 'blue'
-            self.DrawSingleComp(x, -self.height+0.0012, z, self.tile_size, self.tile_size,color=color)
+            self.DrawSingleComp(x, -self.height+0.0012, z, self.tile_size*0.5, self.tile_size*0.5,color=color)    
 
     def GenerateTraps(self):
         pass
@@ -221,6 +230,21 @@ class GraphicsGenerator:
         """
         pass
 
+    def CreateSavePoint(self):
+        self.save_pos = np.copy(self.trans_mat)        
+        self.characterController.CreateSavePoint()
+
+        # Object
+    
+    def LoadSavePoint(self):
+        self.trans_mat = np.copy(self.save_pos)
+        self.characterController.LoadSavePoint()
+    
+    def GeneratePoint(self, object_type):
+        if object_type == "EXIT_POINT":
+            # self.maze.Push
+            pass
+
     def DisplayWasted(self):
         # This part displays wasted scene when the player is caught by a trap.
         # Implement alpha blending.
@@ -240,50 +264,53 @@ class GraphicsGenerator:
         # Camera view
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         glClearColor(0, 0, 0, 1)
-
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        if self.is_BEV == True:
-            self.camz = 1
-            self.nearz = -1
-            self.farz = 6.0
-            glOrtho(-self.w/1600,self.w/1600,-self.h/1600,self.h/1600, self.nearz, self.farz)
-            glMatrixMode(GL_MODELVIEW)
-            glClear(GL_COLOR_BUFFER_BIT)
+        if self.win == False:
+            glMatrixMode(GL_PROJECTION)
             glLoadIdentity()
-            cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,0,1,0]]).T
-            print(cam_up_mat[0,0], cam_up_mat[2,0])
-            gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[2,0])
+            if self.is_BEV == True:
+                self.camz = 1
+                self.nearz = -1
+                self.farz = 6.0
+                glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, self.nearz, self.farz)
+                glMatrixMode(GL_MODELVIEW)
+                glClear(GL_COLOR_BUFFER_BIT)
+                glLoadIdentity()
+                cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,0,1,0]]).T
+                print(cam_up_mat[0,0], cam_up_mat[2,0])
+                gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[2,0])
+                # required feature: add pointing shape on the bev character
+            else:
+                self.perspective(60)
+                glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
+
+                glMatrixMode(GL_MODELVIEW)
+                glClear(GL_COLOR_BUFFER_BIT)
+                glLoadIdentity()
+                gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
+            
+            glMultMatrixf((self.trans_mat).T)
+            # glutSolidTeapot(0.125)
+
+            # Wall Generation test
+            self.GenerateWalls()
+            # Floor Generation
+            self.DrawFloor()
+
+            self.GenerateMarks()
+            # self.GenerateSingleBlock(0.1,0.1,0.1,0.25,'black', 'column')
+
+            glLoadIdentity()
+
+            self.draw_all_axis()
+            # self.GenerateCompass()
+            if self.is_BEV == True:
+                glColor3f(0.860,0.0625,0.0625)
+                glutSolidTeapot(0.2)
         else:
-            self.perspective(60)
-            glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
-
-            glMatrixMode(GL_MODELVIEW)
-            glClear(GL_COLOR_BUFFER_BIT)
-            glLoadIdentity()
-            gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
-        
-        glMultMatrixf((self.trans_mat).T)
-        # glutSolidTeapot(0.125)
-
-        # Wall Generation test
-        self.GenerateWalls()
-        # Floor Generation
-        self.DrawFloor()
-
-        self.GenerateMarks()
-        # self.GenerateSingleBlock(0.1,0.1,0.1,0.25,'black', 'column')
-
-        glLoadIdentity()
-
-        self.draw_all_axis()
-        # self.GenerateCompass()
-        if self.is_BEV == True:
-            glColor3f(0.860,0.0625,0.0625)
-            glutSolidCube(0.2)
-
+            self.DisplayWin()
         glutSwapBuffers()
-
+    def DisplayWin(self):
+        pass
     def reshape(self, w, h):
         # implement here
         print(f"window size: {w} x {h}")
@@ -293,6 +320,10 @@ class GraphicsGenerator:
         self.h = h
         glViewport(0,0,self.w, self.h)
         glutPostRedisplay()
+
+    def moving(self, input_var):
+        print(time.time_ns())
+        glutTimerFunc(16, self.moving, 16)
         
     def Translation(self,x,z):
         """
@@ -308,6 +339,9 @@ class GraphicsGenerator:
         if self.characterController.Translation(rotation, direction):
             self.trans_mat[0,3] = self.trans_mat[0,3] + x
             self.trans_mat[2,3] = self.trans_mat[2,3] + z
+        if self.characterController.WinCheck():
+            self.reset_pos()
+            self.win = True
 
     def keyboard(self, key, x, y):
         x=0
@@ -327,19 +361,17 @@ class GraphicsGenerator:
         
         self.Translation(x,z)
         
-        if key == b'u' or key == b'U':
-            self.reset_pos(0)
-        if key == b'i' or key == b'I':
-            self.reset_pos(1)
-        if key == b'o' or key == b'O':
-            self.reset_pos(2)
         if key == b'p' or key == b'P':
-            self.reset_pos(3)
+            self.reset_pos()
+
         if key == b'l' or key == b'L':
-            self.reset_pos(8)
+            self.LoadSavePoint()
+        if key == b'c' or key == b'C':
+            self.CreateSavePoint()
 
         if key == b'm' or key == b'M':
             self.maze.PushMarks(self.characterController.pos,'A')
+            
         if key == b'b' or key == b'B':
             self.is_BEV = not self.is_BEV
 
@@ -371,32 +403,19 @@ class GraphicsGenerator:
         temp_rot[2,2] = np.cos(rad)
         return temp_rot
 
-    def reset_pos(self, pos:int = 0):
+    def reset_pos(self):
         # This function might be transferred to savepoint load function.
         # pos is the wall side where the character will be placed.
         temp_trans = np.eye(4)
-        if pos == 0:
-            temp_trans[2,3] = -0.75
-            degree = 0
-            
-        elif pos == 1:
-            temp_trans[0,3] = -0.75
-            degree = 90
-            
-        elif pos == 2:
-            temp_trans[2,3] = 0.75
-            degree = 180
-            
-        elif pos==3:
-            temp_trans[0,3] = 0.75
-            degree = 270
-        else:
-            degree = self.initial_angle
-            print(self.initial_angle)
-            self.rotation_angle = 0
-            self.characterController.Reset()
+        degree = self.initial_angle
+        print(self.initial_angle)
+        self.rotation_angle = 0
+        self.characterController.Reset()
         
         self.trans_mat = self.rotation(degree)@temp_trans
+
+        self.save_pos = np.copy(self.trans_mat)
+                
     def setcoord(self, x,y,z):
         arr = np.eye(4)
         arr[0,3] = x
@@ -447,6 +466,7 @@ class GraphicsGenerator:
         # glutMouseFunc(self.mouse)
         # glutMotionFunc(self.motion)
         glutReshapeFunc(self.reshape)
+        glutTimerFunc(16, self.moving, 16)
         self.light()
 
         glutMainLoop()

@@ -58,29 +58,23 @@ class Maze:
         self.height = height
         self.entrancePoint = entrancePoint
         self.exitPoint = exitPoint
-        self.savePoint = None
-
-        self.walls_old = []
+        self.savePoint = entrancePoint
 
         self.walls = []
 
         self.marks = []
         self.num_marks_max = 10
 
+        self.traps = []
+        self.num_traps = math.floor((self.width+self.height)/4)
+
         self.pathMap = None
-        self.objectsMap = None
 
     def SetPathMap(self, pathMap):
         """
         Create Map of Paths
         """
         self.pathMap = pathMap
-
-    def SetObjectsMap(self):
-        """
-        Create Map of Objects, the pathMap should be ready for this to run
-        """
-        self.objectsMap = np.copy(self.pathMap)
 
     def CountWalls(self):
         """
@@ -102,9 +96,7 @@ class Maze:
 
         for i in range(self.width):
             for j in range(self.height):
-                if self.pathMap[i,j]==0:
-                    self.walls_old.append((i,j))
-                    
+                if self.pathMap[i,j]==0:                    
                     # Calculate L1 Distance
                     delta_x = i-exit_x
                     delta_z = j-exit_z
@@ -129,6 +121,31 @@ class Maze:
             self.marks.pop(0)
         print("Creating Marks\n",self.marks)
 
+    def SetTraps(self):
+        for i in range(self.num_traps):
+            self.CreateTrap()
+
+    def CreateTrap(self):
+        """
+        Create a random trap
+        """
+
+        # point_x = randint(0, self.width-1)
+        # point_z = randint(0, self.height-1)
+
+        # pos_x = pos[2,3]
+        # pos_z = pos[0,3]
+        # self.traps.append((pos_x, pos_z, trap_type))
+        # if len(self.traps) > self.num_marks_max:
+        #     self.marks.pop(0)
+        # print("Creating Marks\n",self.marks)
+        pass
+class Trap:
+    def __init__(self):
+        self.pos_x = None
+        self.pos_z = None
+
+        self.type = None
 class MazeGenerator:
     def __init__(self):
         pass
@@ -277,11 +294,11 @@ class MazeGenerator:
         # Set the PathMap of the maze
         maze.SetPathMap(np.array(pathMap))
 
-        # Set the ObjectMap of the maze
-        maze.SetObjectsMap()
-
         # Count the Walls
         maze.CountWalls()
+
+        # Setup Traps with in the maze
+        maze.SetTraps()
 
         # Return maze formed by the traversed path
         return maze

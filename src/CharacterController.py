@@ -34,8 +34,6 @@ class CharacterController:
         self.mazeHeight = maze.height
         self.entrancePoint = maze.entrancePoint
         self.exitPoint = maze.exitPoint
-        self.savePoint = maze.savePoint
-
         # PlayerInfo
         self.playerLife = 5
 
@@ -44,6 +42,10 @@ class CharacterController:
         self.pos[0,3] = (maze.entrancePoint[0] * 4 + 2) * self.tile_size 
         self.pos[2,3] = (maze.entrancePoint[1] * 4 + 2) * self.tile_size
         print("init\n", self.pos)
+        
+        # SavePos initialized to current pos
+        self.savePos = np.copy(self.pos)
+
     def Translation(self, rotation, direction):
         """
         Translates the player.
@@ -95,11 +97,26 @@ class CharacterController:
         print("pos is\n", self.pos[0:3,3])
         return True
 
+    def WinCheck(self):
+        left_dist_x = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[0,3]
+        left_dist_z = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[2,3]
+        
+        if abs(left_dist_x)+abs(left_dist_z) > self.tile_size:
+            return False
+        else:
+            return True
+
     def Reset(self):
         self.pos = np.eye(4)
         self.pos[0,3] = (self.entrancePoint[0] * 4 + 2) * self.tile_size 
         self.pos[2,3] = (self.entrancePoint[1] * 4 + 2) * self.tile_size
         print("Controller Position Reset")
+
+    def CreateSavePoint(self):
+        self.savePos = np.copy(self.pos)        
+    
+    def LoadSavePoint(self):
+        self.pos = np.copy(self.savePos)
 
     def AngleToExit(self, rotationAngle):
         """
