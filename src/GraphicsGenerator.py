@@ -82,8 +82,6 @@ class GraphicsGenerator:
     
     def GenerateSPObject(self):
         if self.SPObj_coord != None:
-            print(self.SPObj_coord)
-            print(self.SPObj_coord[0], self.SPObj_coord[1])
             self.GenerateSingleObject(self.SPObj_coord[0]-2*self.tile_size, -self.height, self.SPObj_coord[1]-2*self.tile_size, 0.5*self.tile_size, color = 'sky', mode='cone')
 
 
