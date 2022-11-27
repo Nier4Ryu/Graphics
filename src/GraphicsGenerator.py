@@ -17,22 +17,34 @@ class GraphicsGenerator:
         self.characterController = CharacterController(self.maze, self.tile_size)
         self.height = 0.2
 
+        self.fallen = 0
+        self.falling = False
+        self.BEV_size = np.eye(4)
+
+        self.TrapOpen = False
+
         self.initial_angle = angle
         # self.rotation_angle = 180
+
 
         self.move_speed = 0.05
         self.degree_speed = 5
         self.is_BEV = False
         self.w = 1600
         self.h = 900
-        print(self.initial_angle)
+        # print(self.initial_angle)
         self.reset_pos()
-        print(self.initial_angle)
-        print("outside",self.rotation_angle)
+        self.save_degree = angle
+        self.save_pos = np.copy(self.trans_mat)
+        self.SPObj_coord = None
+        # print(self.initial_angle)
+        # print("outside",self.rotation_angle)
 
         self.win = False
 
         self.color_list = ['red','orange','yellow','green','blue','indigo','violet']
+
+        self.init_time = time.time()
         
 
     def light(self):
@@ -57,14 +69,25 @@ class GraphicsGenerator:
                 z = coord[0]
                 l = len(self.color_list)
                 color = self.color_list[i%l]
-                self.GenerateSingleBlock(x*4*self.tile_size, 2*self.tile_size-self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
-                self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                self.GenerateSingleBlock((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                self.GenerateSingleBlock((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                self.GenerateSingleObject(x*4*self.tile_size, self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
+                # self.GenerateSingleObject((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                # self.GenerateSingleObject((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                # self.GenerateSingleObject((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+                # self.GenerateSingleObject((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+    def GenerateExitPortal(self):
+        exit_x = self.maze.exitPoint[1]
+        exit_z = self.maze.exitPoint[0]
 
-    def DrawSingleComp(self, x=0.0,y=-0.155,z=0.0, size_x=0.1, size_z = 0.1,color='bb'):
-        glBegin(GL_QUADS)
+        self.GenerateSingleObject(exit_x*4*self.tile_size, self.tile_size-self.height, exit_z*4*self.tile_size, self.tile_size*0.75, color = 'sky', mode='sphere')
+    
+    def GenerateSPObject(self):
+        if self.SPObj_coord != None:
+            print(self.SPObj_coord)
+            print(self.SPObj_coord[0], self.SPObj_coord[1])
+            self.GenerateSingleObject(self.SPObj_coord[0]-2*self.tile_size, -self.height, self.SPObj_coord[1]-2*self.tile_size, 0.5*self.tile_size, color = 'sky', mode='cone')
+
+
+    def DrawSingleComp(self, x=0.0,y=-0.155,z=0.0, size_x=0.1, size_z = 0.1,color='bb', mode='square'):
         if color == 'white':
             glColor3f(0.75, 0.75, 0.75)
         elif color == 'black':
@@ -77,11 +100,14 @@ class GraphicsGenerator:
             glColor3f(0.1,0.1,0.95)
         else:
             glColor3f(0.65,0.47,0.98)
-        glVertex3f(-size_x+x,y,size_z+z)
-        glVertex3f(size_x+x,y,size_z+z)
-        glVertex3f(size_x+x,y,-size_z+z)
-        glVertex3f(-size_x+x,y,-size_z+z)
-        glEnd()
+        if mode == 'square':
+            glBegin(GL_QUADS)
+            glVertex3f(-size_x+x,y,size_z+z)
+            glVertex3f(size_x+x,y,size_z+z)
+            glVertex3f(size_x+x,y,-size_z+z)
+            glVertex3f(-size_x+x,y,-size_z+z)
+            glEnd()
+
     def DrawFloor(self):
         H = self.map.shape[0]
         W = self.map.shape[1]
@@ -92,8 +118,11 @@ class GraphicsGenerator:
             self.DrawSingleComp((wp-2)*self.tile_size,-self.height+0.001,centercoord_z,size_x = 0.00375,size_z=2*H*self.tile_size, color='black')
         for hp in range(4*(H)+1):
             self.DrawSingleComp(centercoord_x,-self.height+0.0011,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.00375, color='black')
+    
+    def DrawSingleTrap(self, x,z):
+        self.DrawSingleComp(x,-self.height+0.0015, z, self.tile_size*0.5, self.tile_size*0.5, 'black', mode='square')
 
-    def GenerateSingleBlock(self, x,y,z, size=0.25, color='black', mode='block'):
+    def GenerateSingleObject(self, x,y,z, size=0.25, color='black', mode='block'):
         # **!! This function must be just under the cam setting and transformation matrix !!**
         # **!! Not followed by glLoadIdentity() !!**
         # **!! glLoadIdentity() must be followed after every single block has been generated !!**
@@ -131,10 +160,19 @@ class GraphicsGenerator:
             glColor3f(0.750,0.250,0.625)
         elif color == 'gray':
             glColor3f(0.56,0.56,0.56)
+        elif color == 'sky':
+            glColor3f(0.56,0.75,0.85)
         else:
             glColor3f(0.99,0.99,0.99)
 
-        if mode=='column':
+        if mode=='block':
+            glMultMatrixf(trans_mat.T)
+            glutSolidCube(size)
+            glColor3f(0.12,0.12,0.12)
+            glLineWidth(70)
+            glutWireCube(size)
+            glMultMatrixf(trans_mat_i.T)
+        elif mode=='column':
             sc_mat = np.eye(4)
             sc_mat[1,1]=100
             glMultMatrixf(trans_mat.T)
@@ -143,11 +181,21 @@ class GraphicsGenerator:
             sc_mat[1,1]=1/sc_mat[1,1]
             glMultMatrixf(sc_mat.T)
             glMultMatrixf(trans_mat_i.T)
-        elif mode=='block':
+        elif mode == 'sphere':
             glMultMatrixf(trans_mat.T)
-            glutSolidCube(size)
-            glColor3f(0.99,0.99,0.99)
-            glutWireCube(size)
+            glutWireSphere(size, 20, 20)
+            # glColor3f(0.99,0.99,0.99)
+            glMultMatrixf(trans_mat_i.T)
+        elif mode == 'cone':
+            # temp_rot_mat = self.rotation(90, False)
+            rot_mat = np.eye(4)
+            rot_mat[1:3,1:3] = self.rotation(90, False)[0:2,0:2]
+            rot_mat_i = np.eye(4)
+            rot_mat_i[1:3,1:3] = self.rotation(-90, False)[0:2,0:2]
+            glMultMatrixf(trans_mat.T)
+            glMultMatrixf(rot_mat)
+            glutWireCone(size, 2*size, 10, 10)
+            glMultMatrixf(rot_mat_i)
             glMultMatrixf(trans_mat_i.T)
         
         glColor3f(1.0,1.0,1.0)
@@ -166,7 +214,9 @@ class GraphicsGenerator:
             self.DrawSingleComp(x, -self.height+0.0012, z, self.tile_size*0.5, self.tile_size*0.5,color=color)    
 
     def GenerateTraps(self):
-        pass
+        if self.TrapOpen == True:
+            for t in self.maze.traps:
+                self.DrawSingleTrap(t)
 
     def GenerateSavepoint(self):
         pass
@@ -231,13 +281,17 @@ class GraphicsGenerator:
         pass
 
     def CreateSavePoint(self):
-        self.save_pos = np.copy(self.trans_mat)        
+        self.save_pos = np.copy(self.trans_mat)  
+        self.save_degree = self.rotation_angle
         self.characterController.CreateSavePoint()
+        self.SPObj_coord = self.characterController.pos[0,3], self.characterController.pos[2,3]
+
 
         # Object
     
     def LoadSavePoint(self):
         self.trans_mat = np.copy(self.save_pos)
+        self.rotation_angle = self.save_degree
         self.characterController.LoadSavePoint()
     
     def GeneratePoint(self, object_type):
@@ -248,6 +302,7 @@ class GraphicsGenerator:
     def DisplayWasted(self):
         # This part displays wasted scene when the player is caught by a trap.
         # Implement alpha blending.
+        # or falling
         pass
     
     def perspective(self, fov):
@@ -271,13 +326,13 @@ class GraphicsGenerator:
                 self.camz = 1
                 self.nearz = -1
                 self.farz = 6.0
-                glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, self.nearz, self.farz)
+                glOrtho(-self.w/1600,self.w/1600,-self.h/1600,self.h/1600, self.nearz, self.farz)
                 glMatrixMode(GL_MODELVIEW)
                 glClear(GL_COLOR_BUFFER_BIT)
                 glLoadIdentity()
-                cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,0,1,0]]).T
-                print(cam_up_mat[0,0], cam_up_mat[2,0])
-                gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[2,0])
+                cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,1,0,0]]).T
+                # print(cam_up_mat[0,0], cam_up_mat[2,0])
+                gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[1,0])
                 # required feature: add pointing shape on the bev character
             else:
                 self.perspective(60)
@@ -286,10 +341,9 @@ class GraphicsGenerator:
                 glMatrixMode(GL_MODELVIEW)
                 glClear(GL_COLOR_BUFFER_BIT)
                 glLoadIdentity()
-                gluLookAt(0,0.2,self.camz, 0,0,0, 0,1,0)
+                gluLookAt(0,0.2-self.fallen,self.camz, 0,-self.fallen,0, 0,1,0)
             
             glMultMatrixf((self.trans_mat).T)
-            # glutSolidTeapot(0.125)
 
             # Wall Generation test
             self.GenerateWalls()
@@ -297,20 +351,26 @@ class GraphicsGenerator:
             self.DrawFloor()
 
             self.GenerateMarks()
-            # self.GenerateSingleBlock(0.1,0.1,0.1,0.25,'black', 'column')
+            self.GenerateExitPortal()
+            self.GenerateSPObject()
 
+            if self.TrapOpen == True:
+                self.DrawSingleTrap(1,1)
             glLoadIdentity()
 
             self.draw_all_axis()
             # self.GenerateCompass()
             if self.is_BEV == True:
-                glColor3f(0.860,0.0625,0.0625)
-                glutSolidTeapot(0.2)
+                self.DrawCharacter()
+
         else:
             self.DisplayWin()
+        # print(self.maze.exitPoint)
         glutSwapBuffers()
+
     def DisplayWin(self):
         pass
+
     def reshape(self, w, h):
         # implement here
         print(f"window size: {w} x {h}")
@@ -321,9 +381,31 @@ class GraphicsGenerator:
         glViewport(0,0,self.w, self.h)
         glutPostRedisplay()
 
-    def moving(self, input_var):
-        print(time.time_ns())
-        glutTimerFunc(16, self.moving, 16)
+    def TimeFunc(self, input_var):
+        # **!!Falling part!!**
+        if self.falling == True:
+            # print(time.time_ns())
+            self.fallen = self.fallen+0.02
+            self.BEV_size[0:3] = self.BEV_size[0:3] * 0.95
+            # print(self.fallen)
+        if self.fallen > 0.85:
+            self.falling = False
+            self.fallen = 0.0
+            self.BEV_size = np.eye(4)
+            self.LoadSavePoint()
+            # self.reset_pos()
+            # And then somewhat life lose activation on the character
+
+        # **!!Trap Control Part!!**
+        if math.ceil(time.time()- self.init_time)%3 == 0:
+            self.TrapOpen = False
+        else:
+            self.TrapOpen = True
+        # print(self.TrapOpen)
+
+        glutTimerFunc(16, self.TimeFunc, 16)
+
+        glutPostRedisplay()
         
     def Translation(self,x,z):
         """
@@ -375,6 +457,9 @@ class GraphicsGenerator:
         if key == b'b' or key == b'B':
             self.is_BEV = not self.is_BEV
 
+        if key == b'f' or key == b'F':
+            self.falling = not self.falling
+
         if key == b'\x1b':
             print('Good bye')
             glutLeaveMainLoop()
@@ -395,12 +480,22 @@ class GraphicsGenerator:
         if ch_global == True:
             self.rotation_angle += degree
     
-        temp_rot = np.eye(4)
-        rad = degree * np.pi / 180
-        temp_rot[0,0] = np.cos(rad)
-        temp_rot[0,2] = -np.sin(rad)
-        temp_rot[2,0] = np.sin(rad)
-        temp_rot[2,2] = np.cos(rad)
+            temp_rot = np.eye(4)
+            rad = degree * np.pi / 180
+            temp_rot[0,0] = np.cos(rad)
+            temp_rot[0,2] = -np.sin(rad)
+            temp_rot[2,0] = np.sin(rad)
+            temp_rot[2,2] = np.cos(rad)
+
+        else:
+            temp_rot = np.eye(4)
+            temp_rot = np.eye(4)
+            rad = degree * np.pi / 180
+            temp_rot[0,0] = np.cos(rad)
+            temp_rot[0,1] = -np.sin(rad)
+            temp_rot[1,0] = np.sin(rad)
+            temp_rot[1,1] = np.cos(rad)
+
         return temp_rot
 
     def reset_pos(self):
@@ -413,8 +508,6 @@ class GraphicsGenerator:
         self.characterController.Reset()
         
         self.trans_mat = self.rotation(degree)@temp_trans
-
-        self.save_pos = np.copy(self.trans_mat)
                 
     def setcoord(self, x,y,z):
         arr = np.eye(4)
@@ -426,6 +519,28 @@ class GraphicsGenerator:
         x = np.eye(4)
         x[index, index] = 20
         return x
+
+    def DrawCharacter(self):
+        glMatrixMode(GL_PROJECTION)
+        glLoadIdentity()
+        glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, -6, 3)
+
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+
+        
+        rot_mat = self.rotation((self.rotation_angle-180), False)
+
+        glMultMatrixf(rot_mat.T)
+        glMultMatrixf(self.BEV_size)
+        glBegin(GL_TRIANGLES)
+        glColor3f(0.95, 0.0, 0.0)
+        glVertex2f(0, 0.23)
+        glColor3f(0.85, 0.85, 0.1)
+        glVertex2f(-0.15, -0.15)
+        glVertex2f(0.15, -0.15)
+        glEnd()
+        glLoadIdentity()
 
     def draw_axis(self, index=0):
         glMatrixMode(GL_PROJECTION)
@@ -443,8 +558,9 @@ class GraphicsGenerator:
         glMultMatrixf((self.setcoord(-0.8*self.w/800,-0.8*self.h/800,5)@rot_mat@self.setcoord(axis_move[0],axis_move[1],axis_move[2])@self.scale_cuboid(index)).T)
         glutSolidCube(0.01)
         glLoadIdentity()
+    
     def draw_all_axis(self):
-        rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
+        # rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
         glColor3f(1.0,0.0,0.0)
         self.draw_axis(0)
         glColor3f(0.0,1.0,0.0)
@@ -466,7 +582,7 @@ class GraphicsGenerator:
         # glutMouseFunc(self.mouse)
         # glutMotionFunc(self.motion)
         glutReshapeFunc(self.reshape)
-        glutTimerFunc(16, self.moving, 16)
+        glutTimerFunc(16, self.TimeFunc, 16)
         self.light()
 
         glutMainLoop()

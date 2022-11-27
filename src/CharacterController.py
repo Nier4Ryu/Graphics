@@ -56,7 +56,7 @@ class CharacterController:
         translation = rotation @ direction
         temp_x = self.pos[0,3] + translation[0]
         temp_z = self.pos[2,3] + translation[2]
-        print("at the beginning\n",self.pos)
+        print("before moving: \n",self.pos)
 
         half_size = 0.1
 
@@ -76,16 +76,16 @@ class CharacterController:
             # Out of Maze Check
             if check_x>self.mazeHeight-1 or check_x<0 or check_z>self.mazeWidth-1 or check_z<0:
                 # This part was actually reversed.
-                print("maze is\n",self.maze.pathMap)
-                print("rotation is\n", rotation[0:3, 0:3])
-                print("pos is\n", self.pos[0:3,3])
+                # print("maze is\n",self.maze.pathMap)
+                # print("rotation is\n", rotation[0:3, 0:3])
+                # print("pos is\n", self.pos[0:3,3])
                 print("You Can't get Out of the maze: pos ", temp_z, " ", temp_x)
                 return False
             # Wall Colision check
             elif self.maze.pathMap[check_z, check_x] == 0:
-                print("maze is\n",self.maze.pathMap)
-                print("rotation is\n", rotation[0:3, 0:3])
-                print("pos is\n", self.pos[0:3,3])
+                # print("maze is\n",self.maze.pathMap)
+                # print("rotation is\n", rotation[0:3, 0:3])
+                # print("pos is\n", self.pos[0:3,3])
                 print("You can't walk into walls: pos ", temp_z, " ", temp_x)
                 return False
             # Maybe we can add sliding along the
@@ -93,13 +93,13 @@ class CharacterController:
         self.pos[0,3] = temp_x
         self.pos[2,3] = temp_z
         print("maze is\n",self.maze.pathMap)
-        print("rotation is\n", rotation[0:3, 0:3])
-        print("pos is\n", self.pos[0:3,3])
+        # print("rotation is\n", rotation[0:3, 0:3])
+        # print("pos is\n", self.pos[0:3,3])
         return True
 
     def WinCheck(self):
-        left_dist_x = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[0,3]
-        left_dist_z = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[2,3]
+        left_dist_x = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[0,3]
+        left_dist_z = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[2,3]
         
         if abs(left_dist_x)+abs(left_dist_z) > self.tile_size:
             return False
