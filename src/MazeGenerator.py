@@ -58,17 +58,18 @@ class Maze:
         self.height = height
         self.entrancePoint = entrancePoint
         self.exitPoint = exitPoint
-        self.savePoint = None
+        self.savePoint = entrancePoint
 
         self.walls = []
-
-        self.walls_temp = []
+        self.outer_walls = []
 
         self.marks = []
         self.num_marks_max = 10
 
+        self.traps = []
+        self.num_traps = math.floor((self.width+self.height)/4)
+
         self.pathMap = None
-        self.objectsMap = None
 
     def SetPathMap(self, pathMap):
         """
@@ -76,16 +77,9 @@ class Maze:
         """
         self.pathMap = pathMap
 
-    def SetObjectsMap(self):
-        """
-        Create Map of Objects, the pathMap should be ready for this to run
-        """
-        self.objectsMap = np.copy(self.pathMap)
-
     def CountWalls(self):
         """
         Create A list of walls
-
         1) Calculate the L2 => square root Distance
         2) Calculate the L1 => abs Distance -> THis is the one to use for now           
         """
@@ -99,23 +93,91 @@ class Maze:
         space = 6
 
         for i in range(math.ceil(max_distance/space)):
-            self.walls_temp.append([])
+            self.walls.append([])
 
         for i in range(self.width):
             for j in range(self.height):
-                if self.pathMap[i,j]==0:
-                    self.walls.append((i,j))
-                    
+                if self.pathMap[i,j]==0:                    
                     # Calculate L1 Distance
                     delta_x = i-exit_x
                     delta_z = j-exit_z
                     distance = abs(delta_x) + abs(delta_z)
-                    self.walls_temp[math.ceil(distance/space)-1].append((i,j))
+                    self.walls[math.ceil(distance/space)-1].append((i,j))
 
-        print("walls arranged in distance is")
-        for walls in self.walls_temp:
-            print("walls is :: ", walls)
-                    
+        # Create Outer Walls
+        entrance_point = self.entrancePoint
+        exit_point = self.exitPoint
+
+        entrance_check = [False, False]
+        if entrance_point[0] == 0:
+            entrance_check[0] = True
+        if entrance_point[0] == self.width-1:
+            entrance_check[0] = True
+        if entrance_point[1] == 0:
+            entrance_check[1] = True
+        if entrance_point[1] == self.height-1:
+            entrance_check[1] = True
+
+        exit_check = [False, False]
+        if exit_point[0] == 0:
+            exit_check[0] = True
+        if exit_point[0] == self.width-1:
+            exit_check[0] = True
+        if exit_point[1] == 0:
+            exit_check[1] = True
+        if exit_point[1] == self.height-1:
+            exit_check[1] = True
+
+        temp_2d = np.zeros((self.width+2, self.height+2))
+        for i in range(self.width+2):
+            for j in range(self.height+2):
+                # With in the maze
+                if (i>0 and i<self.width+1) and (j>0 and j<self.height+1):
+                    continue
+                else:
+                    temp_2d[i,j] = 1
+        
+        # Entrance is At Corner
+        if entrance_check[0] and entrance_check[1]:
+            if entrance_point[0] == 0 and entrance_point[1] == 0:
+                temp_2d[0,0] = 0
+            elif entrance_point[0] == 0 and entrance_point[1] == self.height-1:
+                temp_2d[0, self.height+1] = 0
+            elif entrance_point[0] == self.width-1 and entrance_point[1] == 0:
+                temp_2d[self.width+1, 0] = 0
+            elif entrance_point[0] == self.width-1 and entrance_point[1] == self.height-1:
+                temp_2d[self.width+1, self.height+1] = 0
+        # Entrance is At Edge
+        if entrance_check[0] or entrance_check[1]:
+            for i in range(-1,2):
+                temp_2d[entrance_point[0]+1+i,entrance_point[1]+1]=0
+            for j in range(-1,2):
+                temp_2d[entrance_point[0]+1,entrance_point[1]+1+j]=0
+        
+        # Exit is At Corner -> remove Coorner
+        if exit_check[0] and exit_check[1]:
+            if exit_point[0] == 0 and exit_point[1] == 0:
+                temp_2d[0,0] = 0
+            elif exit_point[0] == 0 and exit_point[1] == self.height-1:
+                temp_2d[0, self.height+1] = 0
+            elif exit_point[0] == self.width-1 and exit_point[1] == 0:
+                temp_2d[self.width+1, 0] = 0
+            elif exit_point[0] == self.width-1 and exit_point[1] == self.height-1:
+                temp_2d[self.width+1, self.height+1] = 0
+        # Exit is At Edge -> remove Cross Road
+        if exit_check[0] or exit_check[1]:
+            for i in range(-1,2):
+                temp_2d[exit_point[0]+1+i,exit_point[1]+1]=0
+            for j in range(-1,2):
+                temp_2d[exit_point[0]+1,exit_point[1]+1+j]=0
+        
+        for i in range(self.width+2):
+            for j in range(self.height+2):
+                if temp_2d[i,j] != 0:
+                    self.outer_walls.append((i-1,j-1))
+
+        print("outer walls is\n", self.outer_walls, "\n")
+
     def PushMarks(self, pos, mark_type):
         """
         Create a position (parse pos)
@@ -130,6 +192,31 @@ class Maze:
             self.marks.pop(0)
         print("Creating Marks\n",self.marks)
 
+    def SetTraps(self):
+        for i in range(self.num_traps):
+            self.CreateTrap()
+
+    def CreateTrap(self):
+        """
+        Create a random trap
+        """
+
+        # point_x = randint(0, self.width-1)
+        # point_z = randint(0, self.height-1)
+
+        # pos_x = pos[2,3]
+        # pos_z = pos[0,3]
+        # self.traps.append((pos_x, pos_z, trap_type))
+        # if len(self.traps) > self.num_marks_max:
+        #     self.marks.pop(0)
+        # print("Creating Marks\n",self.marks)
+        pass
+class Trap:
+    def __init__(self):
+        self.pos_x = None
+        self.pos_z = None
+
+        self.type = None
 class MazeGenerator:
     def __init__(self):
         pass
@@ -278,11 +365,11 @@ class MazeGenerator:
         # Set the PathMap of the maze
         maze.SetPathMap(np.array(pathMap))
 
-        # Set the ObjectMap of the maze
-        maze.SetObjectsMap()
-
         # Count the Walls
         maze.CountWalls()
+
+        # Setup Traps with in the maze
+        maze.SetTraps()
 
         # Return maze formed by the traversed path
         return maze

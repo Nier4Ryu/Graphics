@@ -34,8 +34,6 @@ class CharacterController:
         self.mazeHeight = maze.height
         self.entrancePoint = maze.entrancePoint
         self.exitPoint = maze.exitPoint
-        self.savePoint = maze.savePoint
-
         # PlayerInfo
         self.playerLife = 5
 
@@ -44,6 +42,10 @@ class CharacterController:
         self.pos[0,3] = (maze.entrancePoint[0] * 4 + 2) * self.tile_size 
         self.pos[2,3] = (maze.entrancePoint[1] * 4 + 2) * self.tile_size
         print("init\n", self.pos)
+        
+        # SavePos initialized to current pos
+        self.savePos = np.copy(self.pos)
+
     def Translation(self, rotation, direction):
         """
         Translates the player.
@@ -54,7 +56,7 @@ class CharacterController:
         translation = rotation @ direction
         temp_x = self.pos[0,3] + translation[0]
         temp_z = self.pos[2,3] + translation[2]
-        print("at the beginning\n",self.pos)
+        print("before moving: \n",self.pos)
 
         half_size = 0.1
 
@@ -73,16 +75,17 @@ class CharacterController:
             # Check If pos is updatable
             # Out of Maze Check
             if check_x>self.mazeHeight-1 or check_x<0 or check_z>self.mazeWidth-1 or check_z<0:
-                print("maze is\n",self.maze.pathMap)
-                print("rotation is\n", rotation[0:3, 0:3])
-                print("pos is\n", self.pos[0:3,3])
+                # This part was actually reversed.
+                # print("maze is\n",self.maze.pathMap)
+                # print("rotation is\n", rotation[0:3, 0:3])
+                # print("pos is\n", self.pos[0:3,3])
                 print("You Can't get Out of the maze: pos ", temp_z, " ", temp_x)
                 return False
             # Wall Colision check
             elif self.maze.pathMap[check_z, check_x] == 0:
-                print("maze is\n",self.maze.pathMap)
-                print("rotation is\n", rotation[0:3, 0:3])
-                print("pos is\n", self.pos[0:3,3])
+                # print("maze is\n",self.maze.pathMap)
+                # print("rotation is\n", rotation[0:3, 0:3])
+                # print("pos is\n", self.pos[0:3,3])
                 print("You can't walk into walls: pos ", temp_z, " ", temp_x)
                 return False
             # Maybe we can add sliding along the
@@ -90,150 +93,18 @@ class CharacterController:
         self.pos[0,3] = temp_x
         self.pos[2,3] = temp_z
         print("maze is\n",self.maze.pathMap)
-        print("rotation is\n", rotation[0:3, 0:3])
-        print("pos is\n", self.pos[0:3,3])
+        # print("rotation is\n", rotation[0:3, 0:3])
+        # print("pos is\n", self.pos[0:3,3])
         return True
-    
-    def Translation2(self, rotation, direction):
-        """
-        Translates the player.
-        The Local Location is First Updated
-        Depending on the Local Location Value, the Global location is Updated as well
 
-        For Wall Collision, recalculate the slideable location, slide toward that location
-        """
-        # Make Temp Points
-        translation = rotation @ direction
-        temp_x = self.pos[0,3] + translation[0]
-        temp_z = self.pos[2,3] + translation[2]
+    def WinCheck(self):
+        left_dist_x = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[0,3]
+        left_dist_z = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[2,3]
         
-        half_size = 0.1
-
-        temp_coords = [(temp_x-half_size, temp_z-half_size),
-                        (temp_x-half_size, temp_z+half_size),
-                        (temp_x+half_size, temp_z-half_size),
-                        (temp_x+half_size, temp_z+half_size)]
-
-        slide = False
-        for coord in temp_coords:
-            coord_x = coord[0]
-            coord_z = coord[1]
-            
-            check_x = math.floor(coord_x / self.room_size)
-            check_z = math.floor(coord_z / self.room_size)
-
-            # Check If pos is updatable
-            # Out of Maze Check || Wall Colision check
-            if self.NotPossiblePos(check_x, check_z):
-                slide = True
-                break
-            
-        if slide == False:
-            self.pos[0,3] = temp_x
-            self.pos[2,3] = temp_z
-            print("maze is\n",self.maze.pathMap)
-            print("rotation is\n", rotation[0:3, 0:3])
-            print("pos is\n", self.pos[0:3,3])
-            return direction
-        # Need to calculate sliding direction
-        # As only diagonal movements are possible for sliding only think of them
-        else:
-            # +z or +x possible
-            if translation[0] > 0 and translation[1] > 0:
-                # +z move
-                if self.NotPossiblePos(check_x + 1, check_z)==False:
-                    pass
-                # +x move
-                if self.NotPossiblePos(check_x, check_z + 1)==False:
-                    pass
-            # -z or +x possible
-            elif translation[0] > 0 and translation[1] < 0:
-                # -z move
-                if self.NotPossiblePos(check_x + 1, check_z)==False:
-                    pass
-                # +x move
-                if self.NotPossiblePos(check_x, check_z - 1)==False:
-                    pass
-            # +z or -x possible
-            elif translation[0] < 0 and translation[1] > 0:
-                # +z move
-                if self.NotPossiblePos(check_x - 1, check_z)==False:
-                    pass
-                # -x move
-                if self.NotPossiblePos(check_x, check_z + 1)==False:
-                    pass
-            #  -z or -x possible
-            elif translation[0] < 0 and translation[1] < 0:
-                # -z move
-                if self.NotPossiblePos(check_x - 1, check_z)==False:
-                    pass
-                # -x move
-                if self.NotPossiblePos(check_x, check_z - 1)==False:
-                    pass
-            else:
-                print("Directly Going Towards un unreachable point, can't move")
-                return 0, 0
-
-    def Translation3(self, rotation, direction):
-        """
-        
-        """
-        directions = [7,8,9,4,5,6,1,2,3]
-
-        half_size = 0.1
-        
-        translation = rotation @ direction
-        delta_x = translation[0]
-        delta_z = translation[2]
-        temp_x = self.pos[0,3] + translation[0]
-        temp_z = self.pos[2,3] + translation[2]
-        
-        possible = []
-
-        if delta_z>0 and delta_x>0:
-            possible = [8,9,6]
-        elif delta_z>0 and delta_x<0:
-            possible = [8,7,4]
-        elif delta_z<0 and delta_x>0:
-            possible = [6,3,2]
-        elif delta_z<0 and delta_x<0:
-            possible = [4,1,2]
-
-        for num in possible:
-            if num == 7:
-                pass
-            if num == 8:
-                pass
-            if num == 9:
-                pass
-            if num == 4:
-                pass
-            if num == 5:
-                pass
-            if num == 6:
-                pass
-            if num == 1:
-                pass
-            if num == 2:
-                pass
-            if num == 3:
-                pass
-
-        temp_coords = [(temp_x-half_size, temp_z-half_size),
-                        (temp_x-half_size, temp_z+half_size),
-                        (temp_x+half_size, temp_z-half_size),
-                        (temp_x+half_size, temp_z+half_size)]
-
-    def NotPossiblePos(self, x, z):
-        # Check Out of Maze
-        if x>self.mazeHeight-1 or x<0 or z>self.mazeWidth-1 or z<0:
-            return True
-        # Check Wall
-        elif self.maze.pathMap[z, x] == 0:
-            return True
-        # Pass all Error Detections
-        else:
+        if abs(left_dist_x)+abs(left_dist_z) > self.tile_size:
             return False
+        else:
+            return True
 
     def Reset(self):
         self.pos = np.eye(4)
@@ -241,10 +112,15 @@ class CharacterController:
         self.pos[2,3] = (self.entrancePoint[1] * 4 + 2) * self.tile_size
         print("Controller Position Reset")
 
+    def CreateSavePoint(self):
+        self.savePos = np.copy(self.pos)        
+    
+    def LoadSavePoint(self):
+        self.pos = np.copy(self.savePos)
+
     def AngleToExit(self, rotationAngle):
         """
         Return Angle to Exit point, x/z coordinate
-
         Prob -> This equation is based on the Fact that character is looking towards (0, -1) on x/z coordinate.
         If the above assumption is broken, different results would be required
         """
@@ -256,7 +132,7 @@ class CharacterController:
         
         angle = angleToExit - lookingAngle 
         return angle
-
+        
     def UpdateState(self):
         """
         Updates the state of the player
