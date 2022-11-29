@@ -56,7 +56,6 @@ class CharacterController:
         translation = rotation @ direction
         temp_x = self.pos[0,3] + translation[0]
         temp_z = self.pos[2,3] + translation[2]
-        print("before moving: \n",self.pos)
 
         half_size = 0.1
 
@@ -76,26 +75,29 @@ class CharacterController:
             # Out of Maze Check
             if check_x>self.mazeHeight-1 or check_x<0 or check_z>self.mazeWidth-1 or check_z<0:
                 # This part was actually reversed.
-                # print("maze is\n",self.maze.pathMap)
-                # print("rotation is\n", rotation[0:3, 0:3])
-                # print("pos is\n", self.pos[0:3,3])
                 print("You Can't get Out of the maze: pos ", temp_z, " ", temp_x)
                 return False
             # Wall Colision check
             elif self.maze.pathMap[check_z, check_x] == 0:
-                # print("maze is\n",self.maze.pathMap)
-                # print("rotation is\n", rotation[0:3, 0:3])
-                # print("pos is\n", self.pos[0:3,3])
                 print("You can't walk into walls: pos ", temp_z, " ", temp_x)
                 return False
             # Maybe we can add sliding along the
 
         self.pos[0,3] = temp_x
         self.pos[2,3] = temp_z
-        print("maze is\n",self.maze.pathMap)
-        # print("rotation is\n", rotation[0:3, 0:3])
-        # print("pos is\n", self.pos[0:3,3])
         return True
+
+    def TrapCheck(self):
+        for trap in self.maze.traps:
+            left_dist_x = trap[0] + 0.5 - self.pos[0,3]
+            left_dist_z = trap[1] + 0.5 - self.pos[2,3]
+        
+            if np.sqrt(left_dist_x**2+left_dist_z**2) > 0.75*self.tile_size:
+                continue
+            else:
+                return True
+        
+        return False
 
     def WinCheck(self):
         left_dist_x = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[0,3]
@@ -124,8 +126,8 @@ class CharacterController:
         Prob -> This equation is based on the Fact that character is looking towards (0, -1) on x/z coordinate.
         If the above assumption is broken, different results would be required
         """
-        deltaX = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[0,3]
-        deltaZ = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[2,3]
+        deltaX = (self.exitPoint[1]*4+2)*self.tile_size - self.pos[0,3]
+        deltaZ = (self.exitPoint[0]*4+2)*self.tile_size - self.pos[2,3]
         angleToExit = np.arctan2(deltaZ, deltaX)
         
         lookingAngle = np.radians((270 -rotationAngle)%360)

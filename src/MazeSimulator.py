@@ -4,11 +4,12 @@
 # import our models
 from MazeGenerator import*  # -> Create Maze, after that useless
 from GraphicsGenerator import*
+import argparse
  
 class Simulator:
-    def __init__(self):
-        width = 6
-        height = 5
+    def __init__(self, width=51, height=51):
+        width = width
+        height = height
         entrancePoint = (0,0)
         exitPoint = (width-1, height-1)
         mazeGenerator = MazeGenerator()
@@ -21,5 +22,12 @@ class Simulator:
         self.graphicsGenerator.Update()
 
 if __name__ == "__main__":
-    simulator = Simulator()
+    parser = argparse.ArgumentParser(description="Maze Level")
+
+    parser.add_argument('--w', type=int, default=25)
+    parser.add_argument('--h', type=int, default=25)
+    args = parser.parse_args()
+    width = args.w
+    height = args.h
+    simulator = Simulator(width, height)
     simulator.RunSimulator()

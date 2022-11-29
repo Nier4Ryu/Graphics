@@ -15,6 +15,7 @@ import math
 
 # Python3 code to implement the approach
 from random import randint
+import random
 # Class to define structure of a node
 class Node:
     def __init__(self, value = None, next_element = None):
@@ -61,12 +62,13 @@ class Maze:
         self.savePoint = entrancePoint
 
         self.walls = []
+        self.outer_walls = []
 
         self.marks = []
         self.num_marks_max = 10
 
         self.traps = []
-        self.num_traps = math.floor((self.width+self.height)/4)
+        self.num_traps = math.floor((self.width+self.height)/2)
 
         self.pathMap = None
 
@@ -89,7 +91,7 @@ class Maze:
         max_distance_z = max(exit_z, self.height -1 -exit_z)
         max_distance = max_distance_x + max_distance_z
 
-        space = 6
+        space = 5
 
         for i in range(math.ceil(max_distance/space)):
             self.walls.append([])
@@ -103,10 +105,78 @@ class Maze:
                     distance = abs(delta_x) + abs(delta_z)
                     self.walls[math.ceil(distance/space)-1].append((i,j))
 
-        print("walls arranged in distance is")
-        for walls in self.walls:
-            print("walls is :: ", walls)
-                    
+        # Create Outer Walls
+        entrance_point = self.entrancePoint
+        exit_point = self.exitPoint
+
+        entrance_check = [False, False]
+        if entrance_point[0] == 0:
+            entrance_check[0] = True
+        if entrance_point[0] == self.width-1:
+            entrance_check[0] = True
+        if entrance_point[1] == 0:
+            entrance_check[1] = True
+        if entrance_point[1] == self.height-1:
+            entrance_check[1] = True
+
+        exit_check = [False, False]
+        if exit_point[0] == 0:
+            exit_check[0] = True
+        if exit_point[0] == self.width-1:
+            exit_check[0] = True
+        if exit_point[1] == 0:
+            exit_check[1] = True
+        if exit_point[1] == self.height-1:
+            exit_check[1] = True
+
+        temp_2d = np.zeros((self.width+2, self.height+2))
+        for i in range(self.width+2):
+            for j in range(self.height+2):
+                # With in the maze
+                if (i>0 and i<self.width+1) and (j>0 and j<self.height+1):
+                    continue
+                else:
+                    temp_2d[i,j] = 1
+        
+        # # Entrance is At Corner
+        # if entrance_check[0] and entrance_check[1]:
+        #     if entrance_point[0] == 0 and entrance_point[1] == 0:
+        #         temp_2d[0,0] = 0
+        #     elif entrance_point[0] == 0 and entrance_point[1] == self.height-1:
+        #         temp_2d[0, self.height+1] = 0
+        #     elif entrance_point[0] == self.width-1 and entrance_point[1] == 0:
+        #         temp_2d[self.width+1, 0] = 0
+        #     elif entrance_point[0] == self.width-1 and entrance_point[1] == self.height-1:
+        #         temp_2d[self.width+1, self.height+1] = 0
+        # # Entrance is At Edge
+        # if entrance_check[0] or entrance_check[1]:
+        #     for i in range(-1,2):
+        #         temp_2d[entrance_point[0]+1+i,entrance_point[1]+1]=0
+        #     for j in range(-1,2):
+        #         temp_2d[entrance_point[0]+1,entrance_point[1]+1+j]=0
+        
+        # Exit is At Corner -> remove Coorner
+        if exit_check[0] and exit_check[1]:
+            if exit_point[0] == 0 and exit_point[1] == 0:
+                temp_2d[0,0] = 0
+            elif exit_point[0] == 0 and exit_point[1] == self.height-1:
+                temp_2d[0, self.height+1] = 0
+            elif exit_point[0] == self.width-1 and exit_point[1] == 0:
+                temp_2d[self.width+1, 0] = 0
+            elif exit_point[0] == self.width-1 and exit_point[1] == self.height-1:
+                temp_2d[self.width+1, self.height+1] = 0
+        # Exit is At Edge -> remove Cross Road
+        if exit_check[0] or exit_check[1]:
+            for i in range(-1,2):
+                temp_2d[exit_point[0]+1+i,exit_point[1]+1]=0
+            for j in range(-1,2):
+                temp_2d[exit_point[0]+1,exit_point[1]+1+j]=0
+        
+        for i in range(self.width+2):
+            for j in range(self.height+2):
+                if temp_2d[i,j] != 0:
+                    self.outer_walls.append((i-1,j-1))
+
     def PushMarks(self, pos, mark_type):
         """
         Create a position (parse pos)
@@ -122,24 +192,26 @@ class Maze:
         print("Creating Marks\n",self.marks)
 
     def SetTraps(self):
-        for i in range(self.num_traps):
+        for _ in range(self.num_traps):
             self.CreateTrap()
-
+        
     def CreateTrap(self):
         """
         Create a random trap
         """
+        create = True
+        while(create):
+            point_x = randint(1, self.height-2)
+            point_z = randint(1, self.width-2)
+            offset_x = random.random()*0.5-0.25
+            offset_z = random.random()*0.5-0.25
 
-        # point_x = randint(0, self.width-1)
-        # point_z = randint(0, self.height-1)
+            if self.pathMap[point_z, point_x] == 0 or ((point_x + offset_x), ((point_z+offset_z))) in self.traps:
+                continue
+            else:
+                create = False
+        self.traps.append(((point_x + offset_x), ((point_z+offset_z))))
 
-        # pos_x = pos[2,3]
-        # pos_z = pos[0,3]
-        # self.traps.append((pos_x, pos_z, trap_type))
-        # if len(self.traps) > self.num_marks_max:
-        #     self.marks.pop(0)
-        # print("Creating Marks\n",self.marks)
-        pass
 class Trap:
     def __init__(self):
         self.pos_x = None

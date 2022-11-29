@@ -13,15 +13,20 @@ class GraphicsGenerator:
         self.maze = maze
         self.map = maze.pathMap
         self.wall_list = maze.walls
+        self.outer_walls = maze.outer_walls
+        self.trap_list = [(1,1), (1,2),(1,3)]
+        self.trap_list = maze.traps
         self.tile_size = 0.25
         self.characterController = CharacterController(self.maze, self.tile_size)
         self.height = 0.2
+
+        self.wall_collision = False
 
         self.fallen = 0
         self.falling = False
         self.BEV_size = np.eye(4)
 
-        self.TrapOpen = False
+        self.TrapOpen = True
 
         self.initial_angle = angle
         # self.rotation_angle = 180
@@ -32,13 +37,10 @@ class GraphicsGenerator:
         self.is_BEV = False
         self.w = 1600
         self.h = 900
-        # print(self.initial_angle)
         self.reset_pos()
         self.save_degree = angle
         self.save_pos = np.copy(self.trans_mat)
         self.SPObj_coord = None
-        # print(self.initial_angle)
-        # print("outside",self.rotation_angle)
 
         self.win = False
 
@@ -70,15 +72,17 @@ class GraphicsGenerator:
                 l = len(self.color_list)
                 color = self.color_list[i%l]
                 self.GenerateSingleObject(x*4*self.tile_size, self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
-                # self.GenerateSingleObject((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                # self.GenerateSingleObject((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4-2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                # self.GenerateSingleObject((x*4-2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
-                # self.GenerateSingleObject((x*4+2)*self.tile_size, 2*self.tile_size-self.height, (z*4+2)*self.tile_size, 4*self.tile_size, 'black', 'column')
+        for i, coord in enumerate(self.outer_walls):
+            x = coord[1]
+            z = coord[0]
+            l = len(self.color_list)
+            color = self.color_list[i%l]
+            self.GenerateSingleObject(x*4*self.tile_size, self.height, z*4*self.tile_size, 4*self.tile_size, color, 'block')
     def GenerateExitPortal(self):
         exit_x = self.maze.exitPoint[1]
         exit_z = self.maze.exitPoint[0]
 
-        self.GenerateSingleObject(exit_x*4*self.tile_size, self.tile_size-self.height, exit_z*4*self.tile_size, self.tile_size*0.75, color = 'sky', mode='sphere')
+        self.GenerateSingleObject(exit_x*4*self.tile_size, self.tile_size*0.75-self.height, exit_z*4*self.tile_size, self.tile_size*0.75, color = 'sky', mode='sphere')
     
     def GenerateSPObject(self):
         if self.SPObj_coord != None:
@@ -117,7 +121,9 @@ class GraphicsGenerator:
         for hp in range(4*(H)+1):
             self.DrawSingleComp(centercoord_x,-self.height+0.0011,(hp-2)*self.tile_size,size_x = 2*W*self.tile_size,size_z=0.00375, color='black')
     
-    def DrawSingleTrap(self, x,z):
+    def DrawSingleTrap(self, xz):
+        x = xz[0]
+        z = xz[1]
         self.DrawSingleComp(x,-self.height+0.0015, z, self.tile_size*0.5, self.tile_size*0.5, 'black', mode='square')
 
     def GenerateSingleObject(self, x,y,z, size=0.25, color='black', mode='block'):
@@ -167,9 +173,11 @@ class GraphicsGenerator:
             glMultMatrixf(trans_mat.T)
             glutSolidCube(size)
             glColor3f(0.12,0.12,0.12)
-            glLineWidth(70)
+            glLineWidth(140)
             glutWireCube(size)
             glMultMatrixf(trans_mat_i.T)
+            glLineWidth(1)
+
         elif mode=='column':
             sc_mat = np.eye(4)
             sc_mat[1,1]=100
@@ -182,10 +190,8 @@ class GraphicsGenerator:
         elif mode == 'sphere':
             glMultMatrixf(trans_mat.T)
             glutWireSphere(size, 20, 20)
-            # glColor3f(0.99,0.99,0.99)
             glMultMatrixf(trans_mat_i.T)
         elif mode == 'cone':
-            # temp_rot_mat = self.rotation(90, False)
             rot_mat = np.eye(4)
             rot_mat[1:3,1:3] = self.rotation(90, False)[0:2,0:2]
             rot_mat_i = np.eye(4)
@@ -213,7 +219,7 @@ class GraphicsGenerator:
 
     def GenerateTraps(self):
         if self.TrapOpen == True:
-            for t in self.maze.traps:
+            for t in self.trap_list:
                 self.DrawSingleTrap(t)
 
     def GenerateSavepoint(self):
@@ -225,49 +231,75 @@ class GraphicsGenerator:
         1) A Wire Shpere That in capsulates the needle
         2) A needle rotating with in the capsule
         """
-        rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
-        print("rotAngle is ", rotAngle)
+        degree = self.characterController.AngleToExit(self.rotation_angle)
         
         glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
         glLoadIdentity()
 
         glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
         glLoadIdentity()
-        
-        glutWireSphere(0.01, 50, 50)
 
-        glColor4f(0, 0, 1, 0)
-        # Draw the lines
-        glBegin(GL_LINES)
-        # Reference Line
-        glColor4f(1, 0, 0, 0)
-        glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(0.0, 0.0, 0.1)
+        scaleMat = np.eye(4)
+        scaleMat[0,0] = 0.2
+        scaleMat[1,1] = 0.2
+        
+        rotationMat = np.eye(4)
+        rotationMat[0,0] = np.cos(degree)
+        rotationMat[0,1] = np.sin(-degree)
+        rotationMat[1,0] = np.sin(degree)
+        rotationMat[1,1] = np.cos(degree)
+
+        transMat = np.eye(4)
+        transMat[0,3] = -0.8
+        transMat[1,3] = -0.8
+
+        glMultMatrixf(transMat.T)
+        glMultMatrixf(scaleMat.T)
+        glMultMatrixf(rotationMat)
+
+        depth = -1
+
+        glBegin(GL_TRIANGLES)
+        glColor3f(1, 0.0, 0.0)
+        glVertex3f(0, 0.35, depth)
+        glVertex3f(-0.15, 0, depth)
+        glVertex3f(0.15, 0, depth)
+
+        glColor3f(0, 0, 1)
+        glVertex3f(0, -0.35, depth)
+        glVertex3f(-0.15, 0, depth)
+        glVertex3f(0.15, 0, depth)
+        glEnd()
+        
+        glBegin(GL_TRIANGLE_FAN)
+        glColor3f(1, 1, 1)
+        glVertex3f(0, 0.36, depth)
+        glVertex3f(0.18, 0.312, depth)
+        glVertex3f(0.312, 0.18, depth)
+
+        glVertex3f(0.36, 0, depth)
+        glVertex3f(0.312, -0.18, depth)
+        glVertex3f(0.18, -0.312, depth)
+
+        glVertex3f(0, -0.36, depth)
+        glVertex3f(-0.18, -0.312, depth)
+        glVertex3f(-0.312, -0.18, depth)
+
+        glVertex3f(-0.36, 0, depth)
+        glVertex3f(-0.312, 0.18, depth)
+        glVertex3f(-0.18, 0.312, depth)
         glEnd()
 
-        # Rot about y axis
-        rotMat = np.eye(4)
-        rotMat[0,0] = np.cos(np.radians(rotAngle))
-        rotMat[0,2] = -np.sin(np.radians(rotAngle))
-        rotMat[2,0] = np.sin(np.radians(rotAngle))
-        rotMat[2,2] = np.cos(np.radians(rotAngle))
-        glMultMatrixd(rotMat)
-        # Rot about x axis to give some 3d like image
-        rotAngle = -30
-        rotMat = np.eye(4)
-        rotMat[1,1] = np.cos(np.radians(rotAngle))
-        rotMat[1,2] = -np.sin(np.radians(rotAngle))
-        rotMat[2,1] = np.sin(np.radians(rotAngle))
-        rotMat[2,2] = np.cos(np.radians(rotAngle))
-        glMultMatrixd(rotMat)
-        
-        glBegin(GL_LINES)
-        # Z Line
-        glColor4f(0, 0, 1, 0)
-        glVertex3f(0.0, 0.0, 0.0)
-        glVertex3f(0.0, 0.0, 0.1)
-        glEnd()
+        # Restor Mat Info
+        glPopMatrix()
 
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+
+        glMatrixMode(GL_MODELVIEW)
+    
     def GenerateClock(self):
         pass
 
@@ -277,6 +309,244 @@ class GraphicsGenerator:
         ex)if red -> You are trying to walk through the walls -> not allowed
         """
         pass
+    
+    def GenerateText(self, text, position=(0,0), scale=1, color=(0,0,1,0)):
+        """
+        generate a given text on the position for the given time
+        """
+
+        glMatrixMode(GL_PROJECTION)
+        glPushMatrix()
+        glLoadIdentity()
+
+        glMatrixMode(GL_MODELVIEW)
+        glPushMatrix()
+        glLoadIdentity()
+
+        glLineWidth(3)
+        
+        transMat = np.eye(4)
+        transMat[0,3] = -0.95 + position[0]
+        transMat[1,3] = -0.85 + position[1]
+        scaleMat = np.eye(4)
+        scaleMat[0,0] = 0.01 * scale
+        scaleMat[1,1] = 0.016 * scale
+        degree = np.radians(90)
+        rotationMat = np.eye(4)
+        rotationMat[0,0] = np.cos(degree)
+        rotationMat[0,1] = np.sin(-degree)
+        rotationMat[1,0] = np.sin(degree)
+        rotationMat[1,1] = np.cos(degree)
+        glMultMatrixf(transMat.T)
+        glMultMatrixf(scaleMat.T)
+        glMultMatrixf(rotationMat)        
+
+        delta_x = 0
+        delta_y = 0
+        delta_y_scale = scaleMat[1,1] * 350
+        glBegin(GL_LINES)
+        glColor4f(color[0], color[1], color[2], color[3])
+        len_text = len(text)
+        for i in range(len_text):            
+            char = text[i]
+
+            if char == "a" or char == "A":
+                lines = [
+                    ((0,2),(6,0)),
+                    ((0,2),(6,4)),
+                    ((3,1),(3,3))
+                ]
+            elif char == "b" or char == "B":
+                lines = [
+                ]
+            elif char == "c" or char == "C":
+                lines = [
+                    ((1,4),(0,3)),
+                    ((0,3),(0,1)),
+                    ((0,1),(1,0)),
+                    ((1,0),(5,0)),
+                    ((5,0),(6,1)),
+                    ((6,1),(6,3)),
+                    ((6,3),(5,4))
+                ]
+            elif char == "d" or char == "D":
+                lines = [
+                ]
+            elif char == "e" or char == "E":
+                lines = [
+                    ((0,0),(0,4)),
+                    ((3,0),(3,4)),
+                    ((6,0),(6,4)),
+                    ((0,0),(6,0)),
+                ]
+            elif char == "f" or char == "F":
+                lines = [
+                    ((0,0),(0,4)),
+                    ((3,0),(3,4)),
+                    ((0,0),(6,0)),
+                ]
+            elif char == "g" or char == "G":
+                lines = [
+                ]
+            elif char == "h" or char == "H":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((0,4),(6,4)),
+                    ((3,0),(3,4)),
+                ]
+            elif char == "i" or char == "I":
+                lines = [
+                    ((0,0),(0,4)),
+                    ((6,0),(6,4)),
+                    ((0,2),(6,2)),
+                ]
+            elif char == "j" or char == "J":
+                lines = [
+                ]
+            elif char == "k" or char == "K":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((3,0),(6,0)),
+                    ((3,0),(6,4)),
+                ]
+            elif char == "l" or char == "L":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((6,0),(6,4)),
+                ]
+            elif char == "m" or char == "M":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((0,0),(6,2)),
+                    ((6,2),(0,4)),
+                    ((0,4),(6,4)),
+                ]
+            elif char == "n" or char == "N":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((0,0),(6,4)),
+                    ((6,4),(0,4)),
+                ]
+            elif char == "o" or char == "O":
+                lines = [
+                    ((0,1),(0,3)),
+                    ((0,1),(1,0)),
+                    ((0,3),(1,4)),
+                    ((1,0),(5,0)),
+                    ((1,4),(5,4)),
+                    ((5,0),(6,1)),
+                    ((5,4),(6,3)),
+                    ((6,1),(6,3)),
+                ]
+            elif char == "p" or char == "P":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((0,0),(0,3)),
+                    ((0,3),(1,4)),
+                    ((1,4),(2,4)),
+                    ((2,4),(3,3)),
+                    ((3,3),(3,0)),
+                ]
+            elif char == "q" or char == "Q":
+                lines = [
+                    ((0,1),(0,3)),
+                    ((0,1),(1,0)),
+                    ((0,3),(1,4)),
+                    ((1,0),(5,0)),
+                    ((1,4),(5,4)),
+                    ((5,0),(6,1)),
+                    ((5,4),(6,3)),
+                    ((6,1),(6,3)),
+                    ((3,3),(6,4)),
+                ]
+            elif char == "r" or char == "R":
+                lines = [
+                    ((0,0),(6,0)),
+                    ((0,0),(0,3)),
+                    ((0,3),(1,4)),
+                    ((1,4),(2,4)),
+                    ((2,4),(3,3)),
+                    ((3,3),(3,0)),
+                    ((3,3),(6,4)),
+                ]
+            elif char == "s" or char == "S":
+                lines = [
+                    ((0,1),(0,3)),
+                    ((0,1),(1,0)),
+                    ((0,3),(1,4)),
+                    ((1,0),(5,4)),
+                    ((5,0),(6,1)),
+                    ((5,4),(6,3)),
+                    ((6,1),(6,3)),
+                ]
+            elif char == "t" or char == "T":
+                lines = [
+                    ((0,0),(0,4)),
+                    ((0,2),(6,2)),
+                ]
+            elif char == "u" or char == "U":
+                lines = [
+                    ((0,0),(5,0)),
+                    ((0,4),(5,4)),
+                    ((5,0),(6,1)),
+                    ((6,1),(6,3)),
+                    ((5,4),(6,3)),
+                ]
+            elif char == "v" or char == "V":
+                lines = [
+                    ((0,0),(6,2)),
+                    ((6,2),(0,4)),
+                ]
+            elif char == "w" or char == "W":
+                lines = [
+                    ((0,0),(6,1)),
+                    ((6,1),(3,2)),
+                    ((3,2),(6,3)),
+                    ((6,3),(0,4)),
+                ]
+            elif char == "x" or char == "X":
+                lines = [
+                    ((0,0),(6,4)),
+                    ((0,4),(6,0)),
+                ]
+            elif char == "y" or char == "Y":
+                lines = [
+                    ((0,0),(3,2)),
+                    ((3,2),(0,4)),
+                    ((3,2),(6,2)),
+                ]
+            elif char == "z" or char == "Z":
+                lines = [
+                    ((0,0),(0,4)),
+                    ((0,4),(6,0)),
+                    ((6,0),(6,4)),
+                ]
+            else:
+                lines = [
+
+                ]        
+            self.GenerateLines(lines, delta_x = delta_x, delta_y = delta_y)
+            delta_y += delta_y_scale
+        
+        glEnd()
+
+        # Restore Original Values
+        glPopMatrix()
+        glLoadIdentity()
+        glMatrixMode(GL_PROJECTION)
+        glPopMatrix()
+        glMatrixMode(GL_MODELVIEW)
+
+    def GenerateLines(self, lines, delta_x = 0, delta_y=0):
+        """
+        Draw the lines based on the given points
+        """
+        depth = -1    
+        for line in lines:
+            start_point = line[0]
+            end_point = line[1]
+            glVertex3f(start_point[0]+delta_x,start_point[1]+delta_y,depth)
+            glVertex3f(end_point[0]+delta_x,end_point[1]+delta_y,depth)
 
     def CreateSavePoint(self):
         self.save_pos = np.copy(self.trans_mat)  
@@ -308,66 +578,8 @@ class GraphicsGenerator:
         self.nearz = self.camz * 0.98 # self.camz - 7/8
         self.farz = self.camz * 4.6
 
-    def GenerateGraphics(self):
-        """
-        camera view
-        tile
-        wall
-        """
-        # Camera view
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glClearColor(0, 0, 0, 1)
-        if self.win == False:
-            glMatrixMode(GL_PROJECTION)
-            glLoadIdentity()
-            if self.is_BEV == True:
-                self.camz = 1
-                self.nearz = -1
-                self.farz = 6.0
-                glOrtho(-self.w/1600,self.w/1600,-self.h/1600,self.h/1600, self.nearz, self.farz)
-                glMatrixMode(GL_MODELVIEW)
-                glClear(GL_COLOR_BUFFER_BIT)
-                glLoadIdentity()
-                cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,1,0,0]]).T
-                # print(cam_up_mat[0,0], cam_up_mat[2,0])
-                gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[1,0])
-                # required feature: add pointing shape on the bev character
-            else:
-                self.perspective(60)
-                glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
-
-                glMatrixMode(GL_MODELVIEW)
-                glClear(GL_COLOR_BUFFER_BIT)
-                glLoadIdentity()
-                gluLookAt(0,0.2-self.fallen,self.camz, 0,-self.fallen,0, 0,1,0)
-            
-            glMultMatrixf((self.trans_mat).T)
-
-            # Wall Generation test
-            self.GenerateWalls()
-            # Floor Generation
-            self.DrawFloor()
-
-            self.GenerateMarks()
-            self.GenerateExitPortal()
-            self.GenerateSPObject()
-
-            if self.TrapOpen == True:
-                self.DrawSingleTrap(1,1)
-            glLoadIdentity()
-
-            self.draw_all_axis()
-            # self.GenerateCompass()
-            if self.is_BEV == True:
-                self.DrawCharacter()
-
-        else:
-            self.DisplayWin()
-        # print(self.maze.exitPoint)
-        glutSwapBuffers()
-
     def DisplayWin(self):
-        pass
+        self.GenerateText("You Win", color=(1,1,1,0), scale=2, position=(0.27,0.8))
 
     def reshape(self, w, h):
         # implement here
@@ -395,11 +607,10 @@ class GraphicsGenerator:
             # And then somewhat life lose activation on the character
 
         # **!!Trap Control Part!!**
-        if math.ceil(time.time()- self.init_time)%3 == 0:
+        if math.ceil(time.time()- self.init_time)%2 == 0:
             self.TrapOpen = False
         else:
             self.TrapOpen = True
-        # print(self.TrapOpen)
 
         glutTimerFunc(16, self.TimeFunc, 16)
 
@@ -410,18 +621,24 @@ class GraphicsGenerator:
         First Check that the position to move is not with in the wall
         """
         rotation = np.eye(4)
-        print(self.rotation_angle)
         rotation[0,0] = np.cos(np.radians(-(self.rotation_angle-180)))
         rotation[0,2] = -np.sin(np.radians(-(self.rotation_angle-180)))
         rotation[2,0] = np.sin(np.radians(-(self.rotation_angle-180)))
         rotation[2,2] = np.cos(np.radians(-(self.rotation_angle-180)))
         direction = np.array([x,0,z,1])
+             
         if self.characterController.Translation(rotation, direction):
             self.trans_mat[0,3] = self.trans_mat[0,3] + x
             self.trans_mat[2,3] = self.trans_mat[2,3] + z
+            self.wall_collision = False
+        else:
+            self.wall_collision = True
+
         if self.characterController.WinCheck():
             self.reset_pos()
             self.win = True
+        if self.characterController.TrapCheck() and self.TrapOpen==True:
+            self.falling = True
 
     def keyboard(self, key, x, y):
         x=0
@@ -456,7 +673,8 @@ class GraphicsGenerator:
             self.is_BEV = not self.is_BEV
 
         if key == b'f' or key == b'F':
-            self.falling = not self.falling
+            # self.falling = not self.falling
+            self.falling = True
 
         if key == b'\x1b':
             print('Good bye')
@@ -501,22 +719,10 @@ class GraphicsGenerator:
         # pos is the wall side where the character will be placed.
         temp_trans = np.eye(4)
         degree = self.initial_angle
-        print(self.initial_angle)
         self.rotation_angle = 0
         self.characterController.Reset()
         
         self.trans_mat = self.rotation(degree)@temp_trans
-                
-    def setcoord(self, x,y,z):
-        arr = np.eye(4)
-        arr[0,3] = x
-        arr[1,3] = y
-        arr[2,3] = z
-        return arr
-    def scale_cuboid(self, index=0):
-        x = np.eye(4)
-        x[index, index] = 20
-        return x
 
     def DrawCharacter(self):
         glMatrixMode(GL_PROJECTION)
@@ -525,8 +731,6 @@ class GraphicsGenerator:
 
         glMatrixMode(GL_MODELVIEW)
         glLoadIdentity()
-
-        
         rot_mat = self.rotation((self.rotation_angle-180), False)
 
         glMultMatrixf(rot_mat.T)
@@ -540,32 +744,65 @@ class GraphicsGenerator:
         glEnd()
         glLoadIdentity()
 
-    def draw_axis(self, index=0):
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        glOrtho(-self.w/800,self.w/800,-self.h/800,self.h/800, -6, 3)
-
-        glMatrixMode(GL_MODELVIEW)
-        glLoadIdentity()
-
-        axis_move = [0,0,0]
-        axis_move[index] = 0.1
-        rot_mat = np.eye(4)
-        rot_mat[0:3,0:3] = self.trans_mat[0:3,0:3].T
-
-        glMultMatrixf((self.setcoord(-0.8*self.w/800,-0.8*self.h/800,5)@rot_mat@self.setcoord(axis_move[0],axis_move[1],axis_move[2])@self.scale_cuboid(index)).T)
-        glutSolidCube(0.01)
-        glLoadIdentity()
     
-    def draw_all_axis(self):
-        # rotAngle = np.degrees(self.characterController.AngleToExit(self.rotation_angle))
-        glColor3f(1.0,0.0,0.0)
-        self.draw_axis(0)
-        glColor3f(0.0,1.0,0.0)
-        self.draw_axis(1)
-        glColor3f(0.0,0.0,1.0)
-        self.draw_axis(2)
-        glColor3f(1,1,1)
+    def GenerateGraphics(self):
+        """
+        camera view
+        tile
+        wall
+        """
+        # Camera view
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        glClearColor(0, 0, 0, 1)
+        if self.win == False:
+            glMatrixMode(GL_PROJECTION)
+            glLoadIdentity()
+            if self.is_BEV == True:
+                self.camz = 1
+                self.nearz = -1
+                self.farz = 6.0
+                glOrtho(-self.w/1600,self.w/1600,-self.h/1600,self.h/1600, self.nearz, self.farz)
+                glMatrixMode(GL_MODELVIEW)
+                glClear(GL_COLOR_BUFFER_BIT)
+                glLoadIdentity()
+                cam_up_mat = self.rotation(self.rotation_angle, False)@np.array([[0,1,0,0]]).T
+                gluLookAt(0,4,0, 0,0,0, cam_up_mat[0,0],0,cam_up_mat[1,0])
+                # required feature: add pointing shape on the bev character
+            else:
+                self.perspective(60)
+                glFrustum(-self.w/1600/10,self.w/1600/10,-self.h/900/8,self.h/900/8, self.nearz, self.farz)
+
+                glMatrixMode(GL_MODELVIEW)
+                glClear(GL_COLOR_BUFFER_BIT)
+                glLoadIdentity()
+                gluLookAt(0,0.2-self.fallen,self.camz, 0,-self.fallen,0, 0,1,0)
+            
+            glMultMatrixf((self.trans_mat).T)
+
+            # Wall Generation test
+            
+            self.GenerateWalls()
+            
+            # Floor Generation
+            self.DrawFloor()
+
+            self.GenerateMarks()
+            self.GenerateExitPortal()
+            self.GenerateSPObject()
+            self.GenerateTraps()
+
+            glLoadIdentity()
+
+            self.GenerateCompass()
+
+            if self.is_BEV == True:
+                self.DrawCharacter()
+
+            if self.wall_collision:
+                self.GenerateText("Wall collision", color=(0.56, 0.75,0.85, 0), position=(0, 1.8))
+        else:
+            self.DisplayWin()
+        glutSwapBuffers()
 
     def Update(self):
         glutInit()
@@ -589,5 +826,5 @@ if __name__ == "__main__":
     TestMaze = np.array([[2,0,0,0,0],[1,1,1,1,0],[0,1,0,1,1],[0,0,0,1,3]])
     print(TestMaze)
     print(TestMaze.shape)
-    Generator = GraphicsGenerator(np.zeros((51,51)))
+    Generator = GraphicsGenerator(np.zeros((51,51)), 180)
     Generator.Update()
