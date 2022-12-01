@@ -557,11 +557,6 @@ class GraphicsGenerator:
 
         # Object
     
-    def LoadSavePoint(self):
-        self.trans_mat = np.copy(self.save_pos)
-        self.rotation_angle = self.save_degree
-        self.characterController.LoadSavePoint()
-    
     def GeneratePoint(self, object_type):
         if object_type == "EXIT_POINT":
             # self.maze.Push
@@ -602,7 +597,14 @@ class GraphicsGenerator:
             self.falling = False
             self.fallen = 0.0
             self.BEV_size = np.eye(4)
-            self.LoadSavePoint()
+            if self.characterController.UpdateState() == True:
+                print(self.characterController.playerLife)
+                self.LoadSavePoint()
+            else:
+                print('life ran out')
+                self.reset_pos()
+                self.CreateSavePoint()
+                self.SPObj_coord = None
             # self.reset_pos()
             # And then somewhat life lose activation on the character
 
@@ -639,6 +641,7 @@ class GraphicsGenerator:
             self.win = True
         if self.characterController.TrapCheck() and self.TrapOpen==True:
             self.falling = True
+
 
     def keyboard(self, key, x, y):
         x=0
@@ -713,6 +716,10 @@ class GraphicsGenerator:
             temp_rot[1,1] = np.cos(rad)
 
         return temp_rot
+    def LoadSavePoint(self):
+        self.trans_mat = np.copy(self.save_pos)
+        self.rotation_angle = self.save_degree
+        self.characterController.LoadSavePoint()
 
     def reset_pos(self):
         # This function might be transferred to savepoint load function.

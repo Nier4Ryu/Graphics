@@ -140,6 +140,12 @@ class CharacterController:
         Updates the state of the player
         1. Life
         """
+        self.playerLife -= 1
+        if self.playerLife > 0:
+            return True
+        else:
+            self.playerLife = 5
+            return False
         pass
 
 
