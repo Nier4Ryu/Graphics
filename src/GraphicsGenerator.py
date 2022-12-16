@@ -675,10 +675,6 @@ class GraphicsGenerator:
         if key == b'b' or key == b'B':
             self.is_BEV = not self.is_BEV
 
-        if key == b'f' or key == b'F':
-            # self.falling = not self.falling
-            self.falling = True
-
         if key == b'\x1b':
             print('Good bye')
             glutLeaveMainLoop()
