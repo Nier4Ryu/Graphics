@@ -36,10 +36,10 @@ Rules of this Game
 4. Avoid the traps on the floor. They appear on random spots and are closed and opened regularly. If you fall into the trap, then you will fall and respawn at the beginning of the maze unless you made the save point. If you fall into the trap 5 times, then the save point is reset and you will respawn at the beginning of the maze.
 
 Command
-Move using W, A, S, D
-Rotate using left and right arrow keys.
-Toggle 1st person view / Bird eye view with “B” key.
-Create a mark on the floor with the “M” key.
-Create a save point with the “C” key.
-Load save point with the “L” key.
-Go to the starting point with the “P” key.
+-Move using W, A, S, D
+-Rotate using left and right arrow keys.
+-Toggle 1st person view / Bird eye view with “B” key.
+-Create a mark on the floor with the “M” key.
+-Create a save point with the “C” key.
+-Load save point with the “L” key.
+-Go to the starting point with the “P” key.
