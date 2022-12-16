@@ -14,12 +14,14 @@ Graphics Team Project
 
 Requirements
 
+
 We recommend you to use anaconda to build environment.
 Please install numpy, pyopengl, freeglut.
 
 conda install numpy pyopengl, freeglut
 
 How to run the program
+
 
 cd src
 
@@ -37,9 +39,15 @@ Rules of this Game
 
 Command
 -Move using W, A, S, D
+
 -Rotate using left and right arrow keys.
+
 -Toggle 1st person view / Bird eye view with “B” key.
+
 -Create a mark on the floor with the “M” key.
+
 -Create a save point with the “C” key.
+
 -Load save point with the “L” key.
+
 -Go to the starting point with the “P” key.
